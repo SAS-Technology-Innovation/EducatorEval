@@ -1,164 +1,64 @@
 ---
-const { pathname } = Astro.props;
-import {
-  LayoutDashboard,
-  Settings,
-  Database,
-  Smartphone,
-  BookOpen,
-  Users,
-  TrendingUp,
-  Calendar
-} from 'lucide-react';
+// Main Layout for the Educational Platform
 import '../styles/global.css';
 
-const isActive = (path: string) => pathname === path;
+export interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
 ---
-
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CRP in Action - Observation System</title>
-</head>
-<body>
-<div class="min-h-screen bg-gray-50 flex">
-  <!-- Sidebar -->
-  <div class="w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col">
-    <!-- Logo/Header -->
-    <div class="p-6 border-b border-gray-200">
-      <div class="flex items-center space-x-3">
-        <div class="bg-blue-500 p-2 rounded-lg">
-          <BookOpen className="w-6 h-6 text-white" client:only="react" />
-        </div>
-        <div>
-          <h1 class="text-lg font-bold text-gray-900">CRP in Action</h1>
-          <p class="text-xs text-gray-600">Observation System</p>
-        </div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Educational Employee Experience Platform" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="antialiased">
+    <div id="app">
+      <slot />
     </div>
-
-    <!-- Quick Stats -->
-    <div class="p-6 border-b border-gray-200">
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-gray-600">Goal Progress</span>
-          <span class="text-sm font-medium text-blue-600">247/5,000</span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
-          <div class="bg-blue-500 h-2 rounded-full w-[4.9%]"></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 text-xs">
-          <div class="text-center">
-            <div class="font-medium text-gray-900">68%</div>
-            <div class="text-gray-500">CRP Evidence</div>
-          </div>
-          <div class="text-center">
-            <div class="font-medium text-gray-900">68/80</div>
-            <div class="text-gray-500">Observers</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="flex-1 p-6">
-      <div class="space-y-2">
-        <a
-          href="/dashboard"
-          class={`flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive('/dashboard')
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <LayoutDashboard className="w-5 h-5" client:only="react" />
-          <span>Dashboard</span>
-        </a>
-        
-        <a
-          href="/observations"
-          class={`flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive('/observations')
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <BookOpen className="w-5 h-5" client:only="react" />
-          <span>Observations</span>
-        </a>
-        
-        <a
-          href="/framework"
-          class={`flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive('/framework')
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Settings className="w-5 h-5" client:only="react" />
-          <span>Framework Config</span>
-        </a>
-        
-        <a
-          href="/data"
-          class={`flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive('/data')
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Database className="w-5 h-5" client:only="react" />
-          <span>Data Management</span>
-        </a>
-        
-        <a
-          href="/schedule"
-          class={`flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive('/schedule')
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Calendar className="w-5 h-5" client:only="react" />
-          <span>Schedule Observations</span>
-        </a>
-      </div>
-
-      <!-- Mobile Observation Link -->
-      <div class="mt-8 pt-6 border-t border-gray-200">
-        <a
-          href="/observe"
-          class="flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-        >
-          <Smartphone className="w-5 h-5" client:only="react" />
-          <span>Mobile Observe</span>
-        </a>
-      </div>
-    </nav>
-
-    <!-- Footer -->
-    <div class="p-6 border-t border-gray-200">
-      <div class="text-xs text-gray-500">
-        <div class="font-medium mb-1">Strategic Priorities</div>
-        <div class="space-y-1">
-          <div class="flex items-center space-x-2">
-            <Users className="w-3 h-3" client:only="react" />
-            <span>Social-Emotional Well-being</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <TrendingUp className="w-3 h-3" client:only="react" />
-            <span>Culturally Responsive Teaching</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Content -->
-  <div class="flex-1 overflow-auto">
-    <slot />
-  </div>
-</div>
-</body>
+    
+    <style>
+      :root {
+        --sas-blue: #1e40af;
+        --sas-blue-light: #3b82f6;
+        --sas-blue-dark: #1e3a8a;
+        --sas-green: #059669;
+        --sas-green-light: #10b981;
+        --sas-green-dark: #047857;
+        --sas-gold: #d97706;
+        --sas-gold-light: #f59e0b;
+        --sas-gray: #64748b;
+        --sas-gray-light: #94a3b8;
+        --sas-gray-dark: #475569;
+        --sas-background: #fafafa;
+        --sas-white: #ffffff;
+      }
+      
+      html, body, #app {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+                     Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background-color: var(--sas-background);
+        color: #1f2937;
+        line-height: 1.6;
+      }
+      
+      .font-serif {
+        font-family: 'Merriweather', Georgia, serif;
+      }
+    </style>
+  </body>
 </html>

@@ -1,8 +1,9 @@
 ---
+// Observations Page - CRP Observation Applet
 import Layout from '../layouts/Layout.astro';
-import ObservationWrapper from './_ObservationWrapper';
+import SimpleObservationsPage from '../components/SimpleObservationsPage.tsx';
 ---
 
-<Layout pathname="/observations">
-  <ObservationWrapper client:only="react" />
+<Layout title="Observations - EduPlatform">
+  <SimpleObservationsPage client:load />
 </Layout>

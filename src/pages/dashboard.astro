@@ -1,10 +1,9 @@
 ---
+// Dashboard Page - Enhanced Admin Dashboard (Priority 2)
 import Layout from '../layouts/Layout.astro';
-import DashboardWrapper from './_DashboardWrapper';
-
-const pathname = Astro.url.pathname;
+import EnhancedAdminDashboard from '../components/EnhancedAdminDashboard.tsx';
 ---
 
-<Layout pathname={pathname}>
-  <DashboardWrapper client:only="react" />
+<Layout title="Enhanced Admin Dashboard - EducatorEval">
+  <EnhancedAdminDashboard client:load />
 </Layout>
