@@ -270,6 +270,10 @@ export const mockObservationOperations = {
 
 // Check if we should use mock data
 export const shouldUseMockData = () => {
-  // Use mock data if Firebase isn't configured or in development
-  return process.env.NODE_ENV === 'development' || !process.env.PUBLIC_FIREBASE_API_KEY;
+  // For now, let's force using Firestore since we have it configured
+  // You can set this to true if you want to use mock data for testing
+  const forceMockData = false; // Set to true to use mock data
+  
+  // Use mock data only if explicitly requested or if Firebase config is missing
+  return forceMockData || !process.env.PUBLIC_FIREBASE_API_KEY;
 };

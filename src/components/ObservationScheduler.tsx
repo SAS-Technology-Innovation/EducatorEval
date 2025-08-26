@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  collection,
+  Plus,
   Calendar,
   Clock,
   User,
@@ -11,16 +11,16 @@ import {
   X,
   Search,
   Filter,
-  Plus,
   Edit,
   Trash2,
   AlertCircle,
   CheckCircle,
 } from 'lucide-react';
-import { getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config'; // Adjust the path as needed
+import { teacherOperations, scheduledObservationOperations } from '../firebase/firestore';
+import { useAuth } from '../hooks/useAuth';
+import { Teacher, Observation } from '../types';
 
-interface Teacher {
+interface TeacherData {
   id: string;
   name: string;
   subject: string;
@@ -30,11 +30,11 @@ interface Teacher {
   schedule: {
     [period: string]: { time: string; class: string };
   };
-  availability: 'high' | 'medium' | 'low' | string; // Allow string for potential other values
+  availability: 'high' | 'medium' | 'low' | string;
   lastObservation: string;
 }
 
-interface ScheduledObservation {
+interface ScheduledObservationData {
   id: string;
   teacherId: string;
   teacherName: string;
@@ -43,75 +43,107 @@ interface ScheduledObservation {
   period: string;
   class: string;
   room: string;
-  observer: string; // This should likely be the observer's ID or name from auth
-  status: 'scheduled' | 'completed' | 'cancelled'; // Include other potential statuses
+  observer: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
   notes: string;
   framework: string;
-  duration?: number; // Optional duration
-  priority?: 'normal' | 'high' | 'urgent' | string; // Optional priority
+  duration?: number;
+  priority?: 'normal' | 'high' | 'urgent' | string;
 }
 
 const ObservationScheduler: React.FC = () => {
+  const { user } = useAuth();
   const [selectedView, setSelectedView] = useState('schedule'); // schedule, create, edit
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [teachers, setTeachers] = useState<TeacherData[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
+  const [scheduledObservations, setScheduledObservations] = useState<ScheduledObservationData[]>([]);
 
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const teachersCollection = collection(db, 'teachers');
-        const teacherSnapshot = await getDocs(teachersCollection);
-        const teachersList = teacherSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data() as Omit<Teacher, 'id'> // Cast to Teacher interface, excluding id
+        console.log('🔥 ObservationScheduler: Starting to fetch teachers from Firestore...');
+        const teachersList = await teacherOperations.getAll();
+        console.log('🔥 ObservationScheduler: Fetched teachers from Firestore:', teachersList);
+        
+        // Transform Teacher to TeacherData format if needed
+        const transformedTeachers = teachersList.map((teacher): TeacherData => ({
+          id: teacher.id,
+          name: teacher.name,
+          subject: teacher.subjects.join(', '), // Join array of subjects
+          grade: teacher.grade || 'N/A',
+          room: teacher.currentClass?.room || 'N/A',
+          email: teacher.email,
+          schedule: {
+            'Period 1': { time: '8:00-8:45', class: teacher.currentClass?.name || 'Class' },
+            'Period 2': { time: '8:50-9:35', class: teacher.currentClass?.name || 'Class' },
+            'Period 3': { time: '9:40-10:25', class: teacher.currentClass?.name || 'Class' },
+            'Period 4': { time: '10:45-11:30', class: teacher.currentClass?.name || 'Class' },
+            'Period 5': { time: '11:35-12:20', class: teacher.currentClass?.name || 'Class' },
+            'Period 6': { time: '1:05-1:50', class: teacher.currentClass?.name || 'Class' },
+            'Period 7': { time: '1:55-2:40', class: teacher.currentClass?.name || 'Class' },
+          },
+          availability: 'medium', // Default availability
+          lastObservation: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
         }));
-        setTeachers(teachersList);
-        console.log('Teachers fetched:', teachersList);
+        
+        setTeachers(transformedTeachers);
+        console.log('🔥 ObservationScheduler: Successfully set teachers:', transformedTeachers);
       } catch (error) {
-        console.error('Error fetching teachers:', error);
-        // Optionally set an error state here
+        console.error('❌ ObservationScheduler: Error fetching teachers:', error);
+        alert('Failed to load teachers. Check console for details.');
       } finally {
         setLoadingTeachers(false);
       }
     };
 
     fetchTeachers();
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []);
 
-  // Mock scheduled observations
-  const [scheduledObservations, setScheduledObservations] = useState<ScheduledObservation[]>([
-    {
-      id: 'sched1',
-      teacherId: 'teacher1',
-      teacherName: 'Michael Brown',
-      date: '2025-08-22',
-      time: '9:40-10:25',
-      period: 'Period 3',
-      class: 'Pre-Calc',
-      room: 'B205',
-      observer: 'Dr. Sarah Johnson',
-      status: 'scheduled',
-      notes: 'Focus on questioning strategies',
-      framework: 'CRP + Tripod Challenge'
-    },
-    {
-      id: 'sched2',
-      teacherId: 'teacher2',
-      teacherName: 'Emily Wilson',
-      date: '2025-08-23',
-      time: '10:45-11:30',
-      period: 'Period 4',
-      class: 'Language Arts',
-      room: 'A108',
-      observer: 'Ms. Davis',
-      status: 'scheduled',
-      notes: 'Student reflection opportunities',
-      framework: 'CASEL + 5 Daily Assessment'
-    }
-  ]);
+  useEffect(() => {
+    const fetchScheduledObservations = async () => {
+      try {
+        console.log('🔥 ObservationScheduler: Fetching scheduled observations from Firestore...');
+        const observations = await scheduledObservationOperations.getAll();
+        console.log('🔥 ObservationScheduler: Fetched scheduled observations:', observations);
+        
+        // Transform Observation to ScheduledObservationData format
+        const transformedObservations = observations.map((obs): ScheduledObservationData => ({
+          id: obs.id,
+          teacherId: obs.teacherId,
+          teacherName: obs.teacherName,
+          date: obs.date,
+          time: new Date(obs.startTime).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: false 
+          }).replace(':', '') + '-' + new Date(new Date(obs.startTime).getTime() + 45 * 60000).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: false 
+          }).replace(':', ''),
+          period: obs.classInfo.period || 'Period',
+          class: obs.classInfo.name,
+          room: obs.classInfo.room,
+          observer: obs.observerName,
+          status: obs.status as 'scheduled' | 'completed' | 'cancelled',
+          notes: obs.overallComment || '',
+          framework: obs.frameworkId,
+          duration: obs.duration,
+          priority: 'normal'
+        }));
+        
+        setScheduledObservations(transformedObservations);
+        console.log('🔥 ObservationScheduler: Successfully set scheduled observations:', transformedObservations);
+      } catch (error) {
+        console.error('❌ ObservationScheduler: Error fetching scheduled observations:', error);
+      }
+    };
+
+    fetchScheduledObservations();
+  }, []);
 
   const [newObservation, setNewObservation] = useState({
     teacherId: '',
@@ -125,7 +157,7 @@ const ObservationScheduler: React.FC = () => {
     priority: 'normal'
   });
 
-  const filteredTeachers = teachers.filter(teacher =>
+  const filteredTeachers = teachers.filter((teacher: TeacherData) =>
     teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.grade.toLowerCase().includes(searchTerm.toLowerCase())
@@ -149,14 +181,14 @@ const ObservationScheduler: React.FC = () => {
     }
   };
 
-  // Function to handle scheduling - will be updated with Firebase logic
+  // Function to handle scheduling with Firebase
   const handleScheduleObservation = async () => {
     if (!newObservation.teacherId || !newObservation.date || !newObservation.period) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const teacher = teachers.find(t => t.id === newObservation.teacherId);
+    const teacher = teachers.find((t: TeacherData) => t.id === newObservation.teacherId);
     const scheduleData = teacher?.schedule[newObservation.period];
 
     if (!teacher || !scheduleData) {
@@ -164,64 +196,93 @@ const ObservationScheduler: React.FC = () => {
         return;
     }
 
-    // Create a scheduled observation object (without Firebase ID yet)
-    const observation: ScheduledObservation = {
-      id: `sched${Date.now()}`, // Mock ID
-      teacherId: newObservation.teacherId,
-      teacherName: teacher.name,
-      date: newObservation.date,
-      time: scheduleData.time,
-      period: newObservation.period,
-      class: scheduleData.class, // Use class from selected period
-      room: teacher.room,
-      observer: 'Dr. Sarah Johnson', // Placeholder - should be current user
-      status: 'scheduled',
-      // Ensure all required fields for ScheduledObservation are included,
-      // even if optional in the state object, they should be in the object
-      // sent to Firebase if they have a default or derived value.
-      // For now, adding duration and priority from newObservation state.
-      // These will need adjustment when integrated with actual Firebase schema.
-      notes: newObservation.notes,
-      framework: newObservation.framework,
-      duration: newObservation.duration,
-      priority: newObservation.priority,
-    };
+    try {
+      // Create observation for Firebase
+      const observationData: Omit<Observation, 'id'> = {
+        teacherId: newObservation.teacherId,
+        teacherName: teacher.name,
+        observerId: user?.id || 'test-observer',
+        observerName: user?.name || user?.email || 'Test Observer',
+        frameworkId: newObservation.framework.toLowerCase().replace(/\s+/g, '-'),
+        date: newObservation.date,
+        startTime: new Date(`${newObservation.date} ${scheduleData.time.split('-')[0]}`).toISOString(),
+        status: 'scheduled',
+        duration: newObservation.duration || 15,
+        responses: {},
+        comments: {},
+        overallComment: newObservation.notes,
+        classInfo: {
+          name: scheduleData.class,
+          subject: teacher.subject,
+          room: teacher.room,
+          period: newObservation.period,
+          grade: teacher.grade
+        }
+      };
 
-    setScheduledObservations([...scheduledObservations, observation]);
+      console.log('🔥 ObservationScheduler: Creating observation in Firestore...', observationData);
+      const observationId = await scheduledObservationOperations.create(observationData);
+      console.log('🔥 ObservationScheduler: Successfully created observation with ID:', observationId);
+      
+      // Create a local observation object for display
+      const localObservation: ScheduledObservationData = {
+        id: observationId,
+        teacherId: newObservation.teacherId,
+        teacherName: teacher.name,
+        date: newObservation.date,
+        time: scheduleData.time,
+        period: newObservation.period,
+        class: scheduleData.class,
+        room: teacher.room,
+        observer: user?.name || user?.email || 'Test Observer',
+        status: 'scheduled',
+        notes: newObservation.notes,
+        framework: newObservation.framework,
+        duration: newObservation.duration,
+        priority: newObservation.priority,
+      };
 
-    // TODO: Add Firebase logic here to add the new observation to Firestore
-    console.log('Attempting to schedule:', observation);
+      setScheduledObservations([...scheduledObservations, localObservation]);
 
-    setNewObservation({
-      // Reset form state
-      teacherId: '',
-      date: '',
-      period: '',
-      time: '',
-      class: '',
-      notes: '',
-      framework: 'CRP + All Frameworks',
-      duration: 15,
-      priority: 'normal'
-    });
-    setSelectedView('schedule');
-    alert('Observation Scheduled (Mock)'); // Replace with success feedback after Firebase write
+      console.log('🔥 ObservationScheduler: Added observation to local state');
+
+      setNewObservation({
+        teacherId: '',
+        date: '',
+        period: '',
+        time: '',
+        class: '',
+        notes: '',
+        framework: 'CRP + All Frameworks',
+        duration: 15,
+        priority: 'normal'
+      });
+      setSelectedView('schedule');
+      alert('Observation Scheduled Successfully in Firestore!');
+    } catch (error) {
+      console.error('❌ ObservationScheduler: Error scheduling observation:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error scheduling observation: ${errorMessage}. Check console for details.`);
+    }
   };
 
-  // Mock function to cancel observation - will be replaced with Firebase logic
-  const cancelObservation = (observationId: string) => {
-    setScheduledObservations(scheduledObservations.filter(obs => obs.id !== observationId));
+  // Function to cancel observation with Firebase
+  const cancelObservation = async (observationId: string) => {
+    try {
+      await scheduledObservationOperations.cancel(observationId);
+      setScheduledObservations(scheduledObservations.filter((obs: ScheduledObservationData) => obs.id !== observationId));
+      alert('Observation cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling observation:', error);
+      alert('Error cancelling observation');
+    }
   };
 
-  // Mock function to start observation - will navigate to live form
-  const startObservation = (observation: ScheduledObservation) => {
+  // Function to start observation - will navigate to live form
+  const startObservation = (observation: ScheduledObservationData) => {
     console.log('Starting observation:', observation.id);
-    // In a real app, you would likely navigate to the observation form page
-    // and pass the observation ID or data to pre-fill the form.
     sessionStorage.setItem('currentObservationData', JSON.stringify(observation));
-    window.location.href = `/observe`; // Navigate to the observation page
-
-    // For now, we'll just log.
+    window.location.href = `/observe`;
   };
 
   return (

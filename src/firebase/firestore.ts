@@ -298,13 +298,16 @@ export const teacherOperations = {
   },
 
   /**
-   * Get teacher by ID
+   * Get a specific teacher by ID
    */
   async getById(id: string): Promise<Teacher | null> {
     try {
-      const docSnap = await getDoc(doc(db, 'teachers', id));
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Teacher;
+      const docSnapshot = await getDoc(doc(db, 'teachers', id));
+      if (docSnapshot.exists()) {
+        return {
+          id: docSnapshot.id,
+          ...docSnapshot.data()
+        } as Teacher;
       }
       return null;
     } catch (error) {
@@ -314,62 +317,110 @@ export const teacherOperations = {
   },
 
   /**
-   * Search teachers by name or email
+   * Create a new teacher
    */
-  async search(searchTerm: string): Promise<Teacher[]> {
+  async create(teacher: Omit<Teacher, 'id'>): Promise<string> {
     try {
-      // Note: This is a simplified search. For production, consider using 
-      // Algolia or similar search service for better full-text search
-      const querySnapshot = await getDocs(collection(db, 'teachers'));
-      const teachers = querySnapshot.docs.map(doc => ({
+      const docRef = await addDoc(collection(db, 'teachers'), teacher);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating teacher:', error);
+      throw new Error('Failed to create teacher');
+    }
+  }
+};
+
+// Scheduled Observation Operations  
+export const scheduledObservationOperations = {
+  /**
+   * Get all scheduled observations
+   */
+  async getAll(): Promise<Observation[]> {
+    try {
+      const querySnapshot = await getDocs(
+        query(
+          collection(db, 'observations'), 
+          where('status', '==', 'scheduled'),
+          orderBy('date'),
+          orderBy('startTime')
+        )
+      );
+      return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      } as Teacher));
-      
-      const term = searchTerm.toLowerCase();
-      return teachers.filter(teacher => 
-        teacher.name.toLowerCase().includes(term) ||
-        teacher.email.toLowerCase().includes(term)
-      );
+      } as Observation));
     } catch (error) {
-      console.error('Error searching teachers:', error);
-      throw new Error('Failed to search teachers');
+      console.error('Error fetching scheduled observations:', error);
+      throw new Error('Failed to fetch scheduled observations');
     }
   },
 
   /**
-   * Bulk import teachers
+   * Get scheduled observations by date
    */
-  async bulkImport(teachers: Omit<Teacher, 'id'>[]): Promise<{
-    successful: number;
-    errors: Array<{ teacher: Omit<Teacher, 'id'>; error: string }>;
-  }> {
-    const batch = writeBatch(db);
-    const errors: Array<{ teacher: Omit<Teacher, 'id'>; error: string }> = [];
-    let successful = 0;
-
-    for (const teacher of teachers) {
-      try {
-        const teacherRef = doc(collection(db, 'teachers'));
-        batch.set(teacherRef, {
-          ...teacher,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-        successful++;
-      } catch (error) {
-        errors.push({
-          teacher,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    }
-
+  async getByDate(date: string): Promise<Observation[]> {
     try {
-      await batch.commit();
-      return { successful, errors };
+      const querySnapshot = await getDocs(
+        query(
+          collection(db, 'observations'),
+          where('status', '==', 'scheduled'),
+          where('date', '==', date),
+          orderBy('startTime')
+        )
+      );
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Observation));
     } catch (error) {
-      throw new Error('Failed to import teachers');
+      console.error('Error fetching observations by date:', error);
+      throw new Error('Failed to fetch observations by date');
+    }
+  },
+
+  /**
+   * Create a scheduled observation
+   */
+  async create(observation: Omit<Observation, 'id'>): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, 'observations'), {
+        ...observation,
+        status: 'scheduled',
+        responses: {},
+        comments: {},
+        overallComment: '',
+        duration: 0
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating scheduled observation:', error);
+      throw new Error('Failed to create scheduled observation');
+    }
+  },
+
+  /**
+   * Cancel a scheduled observation
+   */
+  async cancel(id: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'observations', id), {
+        status: 'cancelled'
+      });
+    } catch (error) {
+      console.error('Error cancelling observation:', error);
+      throw new Error('Failed to cancel observation');
+    }
+  },
+
+  /**
+   * Update a scheduled observation
+   */
+  async update(id: string, updates: Partial<Observation>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'observations', id), updates);
+    } catch (error) {
+      console.error('Error updating scheduled observation:', error);
+      throw new Error('Failed to update scheduled observation');
     }
   }
 };

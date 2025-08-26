@@ -73,7 +73,7 @@ export interface Observation {
   startTime: string;
   endTime?: string;
   duration: number;
-  status: 'draft' | 'in-progress' | 'completed' | 'submitted';
+  status: 'draft' | 'in-progress' | 'completed' | 'submitted' | 'scheduled' | 'cancelled';
   responses: Record<string, ObservationResponse>;
   comments: Record<string, string>;
   overallComment: string;

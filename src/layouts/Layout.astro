@@ -7,7 +7,8 @@ import {
   Smartphone,
   BookOpen,
   Users,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 import '../styles/global.css';
 
@@ -109,6 +110,18 @@ const isActive = (path: string) => pathname === path;
         >
           <Database className="w-5 h-5" client:only="react" />
           <span>Data Management</span>
+        </a>
+        
+        <a
+          href="/schedule"
+          class={`flex items-center space-x-4 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isActive('/schedule')
+              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <Calendar className="w-5 h-5" client:only="react" />
+          <span>Schedule Observations</span>
         </a>
       </div>
 

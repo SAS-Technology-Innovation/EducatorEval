@@ -1,0 +1,198 @@
+---
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firestore Test - CRP Observation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="min-h-screen bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Firestore Connection Test</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Connection Test -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Connection Test</h2>
+          <p class="text-gray-600 mb-6">Test if the app can connect to Firestore and read/write data.</p>
+          
+          <button
+            id="test-connection-btn"
+            class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed w-full"
+          >
+            Test Firestore Connection
+          </button>
+          
+          <div id="connection-results" class="mt-6 hidden">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 class="font-medium text-green-800">Connection Results</h3>
+              <div id="connection-details" class="text-green-600 text-sm mt-1"></div>
+            </div>
+          </div>
+          
+          <div id="connection-error" class="mt-6 hidden">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h3 class="font-medium text-red-800">Connection Error</h3>
+              <p class="text-red-600 text-sm mt-1" id="connection-error-message"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Seeding -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Test Data</h2>
+          <p class="text-gray-600 mb-6">Create a test teacher to verify write operations.</p>
+          
+          <button
+            id="seed-test-btn"
+            class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed w-full"
+          >
+            Create Test Teacher
+          </button>
+          
+          <div id="seed-results" class="mt-6 hidden">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 class="font-medium text-green-800">Test Teacher Created</h3>
+              <div id="seed-details" class="text-green-600 text-sm mt-1"></div>
+            </div>
+          </div>
+          
+          <div id="seed-error" class="mt-6 hidden">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h3 class="font-medium text-red-800">Error Creating Test Data</h3>
+              <p class="text-red-600 text-sm mt-1" id="seed-error-message"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Console Log -->
+      <div class="bg-white rounded-lg shadow p-6 mt-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Console Output</h2>
+        <div id="console-output" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto">
+          <div>Ready to test Firestore connection...</div>
+        </div>
+        <button
+          id="clear-console-btn"
+          class="mt-2 text-sm text-gray-500 hover:text-gray-700"
+        >
+          Clear Console
+        </button>
+      </div>
+
+      <!-- Navigation -->
+      <div class="mt-8">
+        <a
+          href="/schedule"
+          class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 font-medium mr-4"
+        >
+          Go to Schedule
+        </a>
+        <a
+          href="/observations"
+          class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 font-medium mr-4"
+        >
+          Go to Observations
+        </a>
+        <a
+          href="/"
+          class="text-blue-600 hover:text-blue-800"
+        >
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { testFirestoreConnection, testSeedTeacher } from '../utils/testFirestore';
+    
+    // Console logging to UI
+    function logToUI(message, type = 'info') {
+      const output = document.getElementById('console-output');
+      const timestamp = new Date().toLocaleTimeString();
+      const colorClass = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400';
+      output.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    // Clear console
+    document.getElementById('clear-console-btn').addEventListener('click', () => {
+      document.getElementById('console-output').innerHTML = '<div>Console cleared...</div>';
+    });
+
+    // Test connection
+    document.getElementById('test-connection-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('test-connection-btn');
+      const results = document.getElementById('connection-results');
+      const error = document.getElementById('connection-error');
+      const errorMessage = document.getElementById('connection-error-message');
+      const details = document.getElementById('connection-details');
+      
+      btn.disabled = true;
+      btn.textContent = 'Testing Connection...';
+      results.classList.add('hidden');
+      error.classList.add('hidden');
+      
+      logToUI('Starting Firestore connection test...', 'info');
+      
+      try {
+        const result = await testFirestoreConnection();
+        results.classList.remove('hidden');
+        details.innerHTML = `
+          <div>✅ Connected to Firestore successfully</div>
+          <div>📚 Teachers in database: ${result.teachersCount}</div>
+          <div>📊 Observations in database: ${result.observationsCount}</div>
+        `;
+        btn.textContent = 'Test Complete';
+        logToUI('Connection test completed successfully!', 'success');
+      } catch (err) {
+        error.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'Unknown error occurred';
+        btn.disabled = false;
+        btn.textContent = 'Try Again';
+        logToUI(`Connection test failed: ${err.message}`, 'error');
+      }
+    });
+
+    // Test seed teacher
+    document.getElementById('seed-test-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('seed-test-btn');
+      const results = document.getElementById('seed-results');
+      const error = document.getElementById('seed-error');
+      const errorMessage = document.getElementById('seed-error-message');
+      const details = document.getElementById('seed-details');
+      
+      btn.disabled = true;
+      btn.textContent = 'Creating Test Teacher...';
+      results.classList.add('hidden');
+      error.classList.add('hidden');
+      
+      logToUI('Creating test teacher...', 'info');
+      
+      try {
+        const teacherId = await testSeedTeacher();
+        results.classList.remove('hidden');
+        details.innerHTML = `
+          <div>✅ Test teacher created successfully</div>
+          <div>🆔 Teacher ID: ${teacherId}</div>
+        `;
+        btn.textContent = 'Test Teacher Created';
+        logToUI(`Test teacher created with ID: ${teacherId}`, 'success');
+      } catch (err) {
+        error.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'Unknown error occurred';
+        btn.disabled = false;
+        btn.textContent = 'Try Again';
+        logToUI(`Failed to create test teacher: ${err.message}`, 'error');
+      }
+    });
+
+    // Initial log
+    logToUI('Firestore Test Page loaded. Ready for testing!', 'info');
+  </script>
+</body>
+</html>
