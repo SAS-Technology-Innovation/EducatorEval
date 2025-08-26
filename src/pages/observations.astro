@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ObservationWrapper from './_ObservationWrapper';
+---
+
+<Layout pathname="/observations">
+  <ObservationWrapper client:only="react" />
+</Layout>

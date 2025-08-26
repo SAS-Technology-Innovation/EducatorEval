@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DashboardWrapper from './_DashboardWrapper';
+
+const pathname = Astro.url.pathname;
+---
+
+<Layout pathname={pathname}>
+  <DashboardWrapper client:only="react" />
+</Layout>

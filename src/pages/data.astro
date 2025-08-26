@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DataWrapper from './_DataWrapper';
+
+const pathname = Astro.url.pathname;
+---
+
+<Layout pathname={pathname}>
+  <DataWrapper client:only="react" />
+</Layout>

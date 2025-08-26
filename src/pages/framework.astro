@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FrameworkEditor from '../components/FrameworkEditor.tsx';
+
+const pathname = Astro.url.pathname;
+---
+
+<Layout pathname={pathname}>
+  <FrameworkEditor client:idle />
+</Layout>

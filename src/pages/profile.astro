@@ -1,0 +1,28 @@
+---
+// Profile page for user account management
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Profile - CRP Observation System</title>
+  </head>
+  <body class="bg-gray-50">
+    <div id="profile-root"></div>
+    
+    <script>
+      (async () => {
+        const module = await import('../components/ProfilePage.tsx');
+        const ProfilePage = module.default;
+        const React = await import('react');
+        const { createRoot } = await import('react-dom/client');
+        
+        const root = createRoot(document.getElementById('profile-root'));
+        root.render(React.createElement(ProfilePage));
+      })();
+    </script>
+  </body>
+</html>
