@@ -327,6 +327,32 @@ export const teacherOperations = {
       console.error('Error creating teacher:', error);
       throw new Error('Failed to create teacher');
     }
+  },
+
+  /**
+   * Search teachers by name (case-insensitive)
+   */
+  async search(searchTerm: string): Promise<Teacher[]> {
+    try {
+      if (!searchTerm.trim()) {
+        return await this.getAll();
+      }
+      
+      // Get all teachers and filter client-side for now
+      // Note: Firestore doesn't support case-insensitive text search natively
+      // For production, consider using Algolia or similar search service
+      const allTeachers = await this.getAll();
+      const lowercaseSearch = searchTerm.toLowerCase();
+      
+      return allTeachers.filter(teacher => 
+        teacher.name.toLowerCase().includes(lowercaseSearch) ||
+        teacher.department?.toLowerCase().includes(lowercaseSearch) ||
+        teacher.subjects?.some(subject => subject.toLowerCase().includes(lowercaseSearch))
+      );
+    } catch (error) {
+      console.error('Error searching teachers:', error);
+      throw new Error('Failed to search teachers');
+    }
   }
 };
 

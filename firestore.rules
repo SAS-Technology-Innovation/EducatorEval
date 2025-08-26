@@ -2,8 +2,30 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to access teachers collection
+    match /teachers/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access frameworks collection
+    match /frameworks/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access observations collection
+    match /observations/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // For development/testing - remove in production
+    // Temporary: allow all operations for testing
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }
