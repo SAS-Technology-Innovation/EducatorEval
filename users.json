@@ -1,0 +1,12 @@
+{"users": [
+{
+  "localId": "9iWeLrCTa5aHj1KnumuKOXq4GIl1",
+  "email": "bfawcett@sas.edu.sg",
+  "emailVerified": false,
+  "passwordHash": "ehDlROtlFZx2mVgKDx7ITeaBy2hHWw2iKt922XAN52Huw/5fG04Te/8itLEIG0nxrXSm3TQSyvNRFtnGRi2brw==",
+  "salt": "cjrV+QCeIUR1qg==",
+  "lastSignedInAt": "1756322006067",
+  "createdAt": "1756320287900",
+  "disabled": false,
+  "providerUserInfo": []
+}]}
