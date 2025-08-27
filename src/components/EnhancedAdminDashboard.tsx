@@ -72,8 +72,8 @@ const EnhancedAdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Initialize mock data
-      initializeMockData();
+      // Note: Starting with clean slate - no mock data initialization
+      console.log('🆕 Loading dashboard with empty data arrays');
       
       // Load all data
       const [usersData, schoolsData, divisionsData, departmentsData, appletsData] = await Promise.all([
@@ -477,7 +477,32 @@ const EnhancedAdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-sas-gray-200">
-              {filteredUsers.map((user) => (
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center space-y-4">
+                      <Users className="w-12 h-12 text-sas-gray-400" />
+                      <div>
+                        <h3 className="text-lg font-medium text-sas-gray-900 mb-2">No users found</h3>
+                        <p className="text-sas-gray-500 mb-4">
+                          {users.length === 0 
+                            ? "Get started by adding your first user to the system." 
+                            : "Try adjusting your search or filter criteria."
+                          }
+                        </p>
+                        <button 
+                          onClick={handleAddUser}
+                          className="inline-flex items-center px-4 py-2 bg-sas-blue-600 text-white rounded-lg hover:bg-sas-blue-700 transition-colors"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Your First User
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-sas-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input 
@@ -544,7 +569,8 @@ const EnhancedAdminDashboard: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
@@ -634,7 +660,23 @@ const EnhancedAdminDashboard: React.FC = () => {
         </div>
         
         <div className="grid gap-4">
-          {schools.map((school) => (
+          {schools.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 className="w-12 h-12 text-sas-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-sas-gray-900 mb-2">No schools found</h3>
+              <p className="text-sas-gray-500 mb-4">
+                Get started by adding your first school to begin organizing your educational system.
+              </p>
+              <button 
+                onClick={handleAddSchool}
+                className="inline-flex items-center px-4 py-2 bg-sas-purple-600 text-white rounded-lg hover:bg-sas-purple-700 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First School
+              </button>
+            </div>
+          ) : (
+            schools.map((school) => (
             <div key={school.id} className="border border-sas-gray-200 rounded-lg p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
@@ -706,7 +748,8 @@ const EnhancedAdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
     </div>
@@ -800,7 +843,23 @@ const EnhancedAdminDashboard: React.FC = () => {
         </div>
 
         <div className="grid gap-4">
-          {applets.map((applet) => (
+          {applets.length === 0 ? (
+            <div className="text-center py-12">
+              <Puzzle className="w-12 h-12 text-sas-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-sas-gray-900 mb-2">No applets installed</h3>
+              <p className="text-sas-gray-500 mb-4">
+                Applets extend the functionality of your educational platform. Get started by browsing available applets.
+              </p>
+              <button 
+                onClick={() => alert('Applet marketplace will be available soon!')}
+                className="inline-flex items-center px-4 py-2 bg-sas-green-600 text-white rounded-lg hover:bg-sas-green-700 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Browse App Store
+              </button>
+            </div>
+          ) : (
+            applets.map((applet) => (
             <div key={applet.id} className="border border-sas-gray-200 rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -875,7 +934,8 @@ const EnhancedAdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
     </div>

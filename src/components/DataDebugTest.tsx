@@ -18,8 +18,7 @@ const DataDebugTest: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('🔄 Initializing mock data...');
-      initializeMockData();
+      console.log('🆕 Loading data from clean slate - no mock data initialization');
       
       console.log('📡 Loading data from API...');
       const [usersData, schoolsData, divisionsData, departmentsData] = await Promise.all([

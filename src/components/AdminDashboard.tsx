@@ -60,23 +60,19 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Initialize mock data
-      await enhancedApi.initializeMockData();
-      
-      // Load all data
-      const [usersData, schoolsData, divisionsData, departmentsData, learningData] = await Promise.all([
+      // Load all data (starting with empty arrays)
+      const [usersData, schoolsData, divisionsData, departmentsData] = await Promise.all([
         enhancedApi.users.list(),
         enhancedApi.schools.list(),
         enhancedApi.divisions.list(),
-        enhancedApi.departments.list(),
-        enhancedApi.applets.getProfessionalLearning()
+        enhancedApi.departments.list()
       ]);
 
       setUsers(usersData);
       setSchools(schoolsData);
       setDivisions(divisionsData);
       setDepartments(departmentsData);
-      setLearningPaths(learningData);
+      setLearningPaths([]); // Start with empty learning paths
 
       // Calculate stats
       const activeUsers = usersData.filter(u => u.isActive).length;

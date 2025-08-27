@@ -11,11 +11,10 @@ const DataModelsTest: React.FC = () => {
       const results: Record<string, any> = {};
       
       try {
-        // Test 1: Initialize mock data
-        console.log('🚀 Initializing mock data...');
-        // We'll call this function to populate test data
-        initializeMockData();
-        results.mockDataInit = { success: true };
+        // Test 1: Start with clean slate
+        console.log('🆕 Starting with empty data arrays...');
+        // No mock data initialization - start completely blank
+        results.cleanSlateInit = { success: true };
 
         // Test 2: User Management API
         console.log('👥 Testing User Management...');

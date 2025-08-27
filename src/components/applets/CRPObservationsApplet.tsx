@@ -45,63 +45,8 @@ const CRPObservationsApplet: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showNewForm, setShowNewForm] = useState(false);
 
-  // Mock observations data - in real app this would come from API
-  const observations: CRPObservation[] = [
-    {
-      id: '1',
-      teacherName: 'Sarah Johnson',
-      subject: 'Mathematics',
-      gradeLevel: '8th Grade',
-      date: '2025-08-26',
-      status: 'completed',
-      crpPercentage: 80,
-      crpEvidence: {
-        culturalResponsive: true,
-        studentEngagement: true,
-        equitableAccess: true,
-        familyCommunity: false,
-        criticalThinking: true
-      },
-      notes: 'Excellent use of culturally relevant examples in fraction problems. Students actively engaged with real-world scenarios.',
-      observer: 'Demo User'
-    },
-    {
-      id: '2',
-      teacherName: 'Michael Davis',
-      subject: 'Science',
-      gradeLevel: '7th Grade',
-      date: '2025-08-25',
-      status: 'in_progress',
-      crpPercentage: 60,
-      crpEvidence: {
-        culturalResponsive: true,
-        studentEngagement: false,
-        equitableAccess: true,
-        familyCommunity: true,
-        criticalThinking: false
-      },
-      notes: 'Good connection to diverse scientists. Need to work on student engagement strategies.',
-      observer: 'Demo User'
-    },
-    {
-      id: '3',
-      teacherName: 'Lisa Chen',
-      subject: 'English Language Arts',
-      gradeLevel: '9th Grade',
-      date: '2025-08-27',
-      status: 'scheduled',
-      crpPercentage: 0,
-      crpEvidence: {
-        culturalResponsive: false,
-        studentEngagement: false,
-        equitableAccess: false,
-        familyCommunity: false,
-        criticalThinking: false
-      },
-      notes: '',
-      observer: 'Demo User'
-    }
-  ];
+  // Start with empty observations - user will add their own data
+  const observations: CRPObservation[] = [];
 
   // Filter observations
   const filteredObservations = useMemo(() => {
