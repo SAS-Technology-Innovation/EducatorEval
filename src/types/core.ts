@@ -1,49 +1,59 @@
 // Core Type Definitions for Educational Employee Experience Platform
+
+// Platform Roles (actual system permissions)
 export type UserRole = 
+  | 'super_admin'     // Full system access, can manage everything
+  | 'administrator'   // School/district admin, manage users and settings  
+  | 'manager'         // Department heads, can observe and manage teams
+  | 'observer'        // Can conduct observations and evaluations
+  | 'educator'        // Teachers and instructional staff
+  | 'staff';          // Support staff with limited access
+
+// Job Titles (for display and organizational purposes)
+export type JobTitle =
   // School Leadership
   | 'superintendent'
-  | 'principal'
+  | 'principal' 
   | 'assistant_principal'
   
-  // Division Leadership  
+  // Division Leadership
   | 'division_director'
   | 'assistant_director'
   
-  // Department Leadership
+  // Department Leadership  
   | 'department_head'
   | 'grade_chair'
+  | 'curriculum_coordinator'
+  | 'assessment_coordinator'
   
   // Teaching Staff
   | 'teacher'
   | 'substitute_teacher'
   | 'specialist_teacher'
-  
-  // Instructional Support
   | 'instructional_coach'
   | 'plc_coach'
-  | 'curriculum_coordinator'
-  | 'assessment_coordinator'
   
   // Student Support
   | 'counselor'
-  | 'social_worker'
+  | 'social_worker' 
   | 'psychologist'
   | 'special_education_coordinator'
   
   // Specialized Roles
-  | 'observer'
   | 'dei_specialist'
   | 'technology_coordinator'
   | 'librarian'
+  | 'media_specialist'
   
   // Support Staff
   | 'secretary'
+  | 'administrative_assistant'
   | 'paraprofessional'
-  | 'support_staff'
-  
-  // System Administration
-  | 'super_admin'
-  | 'system_admin';
+  | 'aide'
+  | 'custodian'
+  | 'security'
+  | 'nurse'
+  | 'other';
 
 // User & Organization Models
 export interface User {
@@ -67,7 +77,7 @@ export interface User {
   permissions: string[];
   
   // Professional Info
-  title: string;
+  jobTitle: JobTitle;
   certifications: string[];
   experience: string;
   subjects: string[];

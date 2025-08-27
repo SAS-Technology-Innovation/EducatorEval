@@ -25,5 +25,17 @@ export default defineConfig({
         appId: process.env.FIREBASE_APP_ID || ''
       }),
     },
+    optimizeDeps: {
+      include: [
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+        'firebase/storage',
+        'firebase/analytics'
+      ]
+    },
+    ssr: {
+      noExternal: ['firebase']
+    }
   },
 });

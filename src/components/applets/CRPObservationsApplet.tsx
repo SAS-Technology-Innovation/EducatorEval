@@ -118,42 +118,10 @@ const CRPObservationsApplet: React.FC = () => {
     setCurrentView('form');
   };
 
-  const renderAppletHeader = () => (
-    <div className="bg-white shadow-sm border-b border-sas-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handleBackToDashboard}
-              className="flex items-center space-x-2 text-sas-gray-600 hover:text-sas-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm font-medium">Back to Dashboard</span>
-            </button>
-            <div className="w-px h-6 bg-sas-gray-300"></div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-sas-blue-100 rounded-lg flex items-center justify-center">
-                <Eye className="w-5 h-5 text-sas-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-sas-gray-900">CRP Observations</h1>
-                <p className="text-xs text-sas-gray-500">Culturally Responsive Pedagogy Assessment Tool</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="text-xs text-sas-gray-500">
-              Version 2.1.0 • Educational Applet
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Header removed - now handled by UnifiedHeader in PlatformLayout
 
   const renderListView = () => (
     <>
-      {renderAppletHeader()}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
@@ -334,7 +302,6 @@ const CRPObservationsApplet: React.FC = () => {
 
     return (
       <>
-        {renderAppletHeader()}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-xl shadow-md p-8">
             <div className="flex items-center justify-between mb-6">
@@ -407,7 +374,6 @@ const CRPObservationsApplet: React.FC = () => {
 
   const renderFormView = () => (
     <>
-      {renderAppletHeader()}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-md p-8">
           <div className="flex items-center justify-between mb-6">

@@ -1,0 +1,12 @@
+---
+// Admin Dashboard - Platform Administration
+import Layout from '../../layouts/Layout.astro';
+import PlatformLayout from '../../components/layout/PlatformLayout.tsx';
+import AdminDashboard from '../../components/admin/AdminDashboard.tsx';
+---
+
+<Layout title="Admin Dashboard - EducatorEval">
+  <PlatformLayout currentPath="/admin" client:load>
+    <AdminDashboard client:load />
+  </PlatformLayout>
+</Layout>

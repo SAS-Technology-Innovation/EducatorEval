@@ -12,11 +12,11 @@ type User struct {
 	DisplayName string `firestore:"displayName" json:"displayName"`
 	Avatar      string `firestore:"avatar,omitempty" json:"avatar,omitempty"`
 
-	// School Structure
-	EmployeeID   string `firestore:"employeeId" json:"employeeId"`
-	SchoolID     string `firestore:"schoolId" json:"schoolId"`
-	DivisionID   string `firestore:"divisionId" json:"divisionId"`
-	DepartmentID string `firestore:"departmentId,omitempty" json:"departmentId,omitempty"`
+	// School Structure - Users can belong to multiple divisions/departments
+	EmployeeID    string   `firestore:"employeeId" json:"employeeId"`
+	SchoolID      string   `firestore:"schoolId" json:"schoolId"`
+	DivisionIDs   []string `firestore:"divisionIds" json:"divisionIds"`         // Can belong to multiple divisions
+	DepartmentIDs []string `firestore:"departmentIds" json:"departmentIds"`     // Can belong to multiple departments
 
 	// Role & Permissions
 	PrimaryRole    UserRole   `firestore:"primaryRole" json:"primaryRole"`
@@ -52,7 +52,7 @@ type UserRole string
 
 const (
 	// School Leadership
-	Superintendent     UserRole = "superintendent"
+	HeadOfSchool       UserRole = "head_of_school"      // Replaces Superintendent for private schools
 	Principal          UserRole = "principal"
 	AssistantPrincipal UserRole = "assistant_principal"
 

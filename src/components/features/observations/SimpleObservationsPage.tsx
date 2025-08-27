@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { observationsService } from '../../../lib/firestore';
 import { 
   Plus,
   Search,
@@ -18,59 +19,37 @@ import {
 const SimpleObservationsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [observations, setObservations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock observations data
-  const observations = [
-    {
-      id: '1',
-      teacherName: 'Sarah Johnson',
-      subject: 'Mathematics',
-      gradeLevel: '8th Grade',
-      date: '2025-08-26',
-      status: 'completed',
-      crpPercentage: 75,
-      crpEvidence: {
-        culturalResponsive: true,
-        studentEngagement: true,
-        equitableAccess: false
+  // Load observations from Firestore
+  useEffect(() => {
+    const loadObservations = async () => {
+      try {
+        setLoading(true);
+        const data = await observationsService.list({
+          orderBy: ['createdAt', 'desc'],
+          limit: 50
+        });
+        
+        setObservations(data);
+      } catch (error) {
+        console.error('Failed to load observations:', error);
+        setObservations([]);
+      } finally {
+        setLoading(false);
       }
-    },
-    {
-      id: '2',
-      teacherName: 'Michael Davis',
-      subject: 'Science',
-      gradeLevel: '7th Grade',
-      date: '2025-08-25',
-      status: 'in_progress',
-      crpPercentage: 60,
-      crpEvidence: {
-        culturalResponsive: true,
-        studentEngagement: false,
-        equitableAccess: true
-      }
-    },
-    {
-      id: '3',
-      teacherName: 'Lisa Chen',
-      subject: 'English Language Arts',
-      gradeLevel: '9th Grade',
-      date: '2025-08-24',
-      status: 'scheduled',
-      crpPercentage: 0,
-      crpEvidence: {
-        culturalResponsive: false,
-        studentEngagement: false,
-        equitableAccess: false
-      }
-    }
-  ];
+    };
+
+    loadObservations();
+  }, []);
 
   // Filter observations
   const filteredObservations = useMemo(() => {
     return observations.filter(obs => {
       const matchesSearch = !searchTerm || 
-        obs.teacherName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        obs.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        obs.educatorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        obs.subjectArea?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         obs.gradeLevel?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || obs.status === statusFilter;
@@ -124,7 +103,7 @@ const SimpleObservationsPage: React.FC = () => {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-sas-gray-900 font-serif">Observations</h1>
-              <p className="text-sas-gray-600 mt-1">CRP (Culturally Responsive Pedagogy) Observations</p>
+              <p className="text-sas-gray-600 mt-1">Teacher observation management and frameworks</p>
             </div>
             <div className="flex items-center space-x-4">
               <button className="bg-gradient-to-r from-sas-blue-600 to-sas-green-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-sas-blue-700 hover:to-sas-green-700 shadow-lg transition-all duration-200 hover:shadow-xl flex items-center">
@@ -183,7 +162,7 @@ const SimpleObservationsPage: React.FC = () => {
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-sas-gray-600">CRP Evidence</p>
+                <p className="text-sm font-medium text-sas-gray-600">With Evidence</p>
                 <p className="text-2xl font-bold text-sas-purple-600">{stats.crpEvidence}</p>
               </div>
               <TrendingUp className="w-8 h-8 text-sas-purple-600" />
@@ -231,7 +210,7 @@ const SimpleObservationsPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">Grade</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">CRP %</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">Score %</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -239,16 +218,16 @@ const SimpleObservationsPage: React.FC = () => {
                 {filteredObservations.map((observation) => (
                   <tr key={observation.id} className="hover:bg-sas-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-sas-gray-900">
-                      {observation.teacherName}
+                      {observation.educatorName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-sas-gray-900">
-                      {observation.subject}
+                      {observation.subjectArea}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-sas-gray-900">
                       {observation.gradeLevel}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-sas-gray-900">
-                      {new Date(observation.date).toLocaleDateString()}
+                      {new Date(observation.observationDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(observation.status)}`}>

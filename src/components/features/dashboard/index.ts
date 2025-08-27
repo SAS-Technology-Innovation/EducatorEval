@@ -1,4 +1,6 @@
-// Dashboard Feature Components
-export { default as Dashboard } from './Dashboard';
-export { default as SimpleDashboard } from './SimpleDashboard';
-export { default as RoleBasedDashboard } from './RoleBasedDashboard';
+// Dashboard Feature Components  
+export { default as UserDashboard } from './UserDashboardSimple';
+export { default as UserDashboardSimple } from './UserDashboardSimple';
+export { default as UserDashboardWithNavigation } from './UserDashboardWithNavigation';
+// Note: Renamed to UserDashboardSimple for clean implementation
+// Note: RoleBasedDashboard removed - role-based functionality moved to admin components

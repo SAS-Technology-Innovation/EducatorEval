@@ -1,9 +1,91 @@
 ---
-// Observations Page - CRP Observation Applet
+// Observations Page - Teacher observation management
 import Layout from '../layouts/Layout.astro';
-import SimpleObservationsPage from '../components/SimpleObservationsPage.tsx';
 ---
 
-<Layout title="Observations - EduPlatform">
-  <SimpleObservationsPage client:load />
+<Layout title="Observations - EducatorEval">
+  <div id="observations-wrapper">
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBEoqKHKKyLTr8FNnZpGWGVqBf39eVq-lE",
+        authDomain: "educator-evaluations.firebaseapp.com",
+        projectId: "educator-evaluations",
+        storageBucket: "educator-evaluations.firebasestorage.app",
+        messagingSenderId: "164055495572",
+        appId: "1:164055495572:web:4e9e61b9be7f0b35b8ac75"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+
+      function showObservationsPage(user) {
+        document.getElementById('observations-wrapper').innerHTML = `
+          <div class="min-h-screen bg-gray-50">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
+              <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                  <div class="flex items-center">
+                    <a href="/dashboard" class="text-blue-600 hover:text-blue-800 mr-4">← Dashboard</a>
+                    <h1 class="text-2xl font-bold text-gray-900">Observations</h1>
+                  </div>
+                  <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-600">${user.email}</span>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+              <div class="px-4 py-6 sm:px-0">
+                
+                <!-- Create New Observation Button -->
+                <div class="mb-6">
+                  <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    + Create New Observation
+                  </button>
+                </div>
+
+                <!-- Observations List -->
+                <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                  <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                      Your Observations
+                    </h3>
+                    <p class="text-gray-500">No observations found. Click "Create New Observation" to get started.</p>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        `;
+      }
+
+      function showLoading() {
+        document.getElementById('observations-wrapper').innerHTML = `
+          <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+              <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600">Loading...</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Initialize
+      showLoading();
+      
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          showObservationsPage(user);
+        } else {
+          window.location.href = '/login';
+        }
+      });
+    </script>
+  </div>
 </Layout>

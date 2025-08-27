@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, School, Division, Department, AppletMetadata } from '../types';
-import { enhancedApi } from '../api/enhancedApi';
+import { api } from '../../api/api';
 
 const DataModelsTest: React.FC = () => {
   const [testResults, setTestResults] = useState<Record<string, any>>({});
@@ -18,8 +18,8 @@ const DataModelsTest: React.FC = () => {
 
         // Test 2: User Management API
         console.log('👥 Testing User Management...');
-        const users = await enhancedApi.users.list();
-        const teachers = await enhancedApi.users.getTeachers();
+        const users = await api.users.list();
+        const teachers = await api.users.getTeachers();
         results.userManagement = {
           success: true,
           totalUsers: users.length,
@@ -29,9 +29,9 @@ const DataModelsTest: React.FC = () => {
 
         // Test 3: School Hierarchy API
         console.log('🏢 Testing School Management...');
-        const schools = await enhancedApi.schools.list();
-        const divisions = await enhancedApi.divisions.list();
-        const departments = await enhancedApi.departments.list();
+        const schools = await api.schools.list();
+        const divisions = await api.divisions.list();
+        const departments = await api.departments.list();
         results.schoolManagement = {
           success: true,
           schoolsCount: schools.length,
@@ -42,7 +42,7 @@ const DataModelsTest: React.FC = () => {
 
         // Test 4: Applet System
         console.log('🔧 Testing Applet Management...');
-        const applets = await enhancedApi.applets.list();
+        const applets = await api.applets.list();
         results.appletManagement = {
           success: true,
           appletsCount: applets.length,

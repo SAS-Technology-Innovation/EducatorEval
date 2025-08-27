@@ -1,0 +1,12 @@
+---
+// Admin Organizations Management Page
+import Layout from '../../layouts/Layout.astro';
+import PlatformLayout from '../../components/layout/PlatformLayout.tsx';
+import AuthAdminWrapper from '../../components/providers/AuthAdminWrapper.tsx';
+---
+
+<Layout title="Organization Management - Admin">
+  <PlatformLayout currentPath="/admin/organizations" client:load>
+    <AuthAdminWrapper client:load defaultTab="organizations" />
+  </PlatformLayout>
+</Layout>

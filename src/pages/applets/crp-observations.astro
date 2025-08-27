@@ -1,9 +1,12 @@
 ---
-// CRP Observations Applet - Standalone Educational Tool
+// CRP Observations - Framework-based observation tool  
 import Layout from '../../layouts/Layout.astro';
+import PlatformLayout from '../../components/layout/PlatformLayout.tsx';
 import CRPObservationsApplet from '../../components/applets/CRPObservationsApplet.tsx';
 ---
 
-<Layout title="CRP Observations - EduPlatform">
-  <CRPObservationsApplet client:load />
+<Layout title="CRP Observations - EducatorEval">
+  <PlatformLayout currentPath="/applets/crp-observations" client:load>
+    <CRPObservationsApplet client:load />
+  </PlatformLayout>
 </Layout>

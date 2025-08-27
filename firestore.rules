@@ -1,0 +1,313 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+    
+    function getSchoolId() {
+      return request.auth.token.schoolId;
+    }
+    
+    function getDivisionId() {
+      return request.auth.token.divisionId;
+    }
+    
+    function getDepartmentId() {
+      return request.auth.token.departmentId;
+    }
+    
+    function hasPermission(permission) {
+      return permission in request.auth.token.permissions || '*' in request.auth.token.permissions;
+    }
+    
+    function isCoreAdmin() {
+      return getUserRole() in ['super_admin', 'system_admin', 'superintendent', 'principal'];
+    }
+    
+    function isSchoolAdmin() {
+      return getUserRole() in ['super_admin', 'system_admin', 'superintendent', 'principal', 'assistant_principal'];
+    }
+    
+    function isDivisionAdmin() {
+      return getUserRole() in ['super_admin', 'system_admin', 'superintendent', 'principal', 'assistant_principal', 'division_director'];
+    }
+    
+    function canObserve() {
+      return getUserRole() in ['observer', 'principal', 'assistant_principal', 'division_director',
+                              'instructional_coach', 'plc_coach', 'dei_specialist', 'department_head'];
+    }
+    
+    function canManageUsers() {
+      return getUserRole() in ['super_admin', 'system_admin', 'superintendent', 'principal', 
+                              'assistant_principal', 'division_director', 'department_head'];
+    }
+    
+    function isSameSchool(schoolId) {
+      return getSchoolId() == schoolId;
+    }
+    
+    function isSameDivision(divisionId) {
+      return getDivisionId() == divisionId;
+    }
+    
+    function isSameDepartment(departmentId) {
+      return getDepartmentId() == departmentId;
+    }
+
+    // === CORE PLATFORM RULES ===
+
+    // User data access
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||  // Users can read their own data
+        canManageUsers() ||            // Admins can read user data
+        isSameSchool(resource.data.schoolId)  // Same school access
+      );
+      allow write: if isAuthenticated() && (
+        (request.auth.uid == userId && isProfileUpdate()) ||  // Users can update their profile
+        canManageUsers()  // Admins can manage users
+      );
+      allow create: if isAuthenticated() && canManageUsers();
+      allow delete: if isAuthenticated() && getUserRole() == 'super_admin';
+    }
+    
+    // Helper function for profile updates (users can only update certain fields)
+    function isProfileUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'firstName', 'lastName', 'displayName', 'phoneNumber', 'address',
+        'pronouns', 'preferences', 'notificationSettings', 'updatedAt'
+      ]);
+    }
+
+    // Organization data (schools, divisions, departments)
+    match /organizations/{orgId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isCoreAdmin();
+    }
+    
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated() && (
+        isCoreAdmin() || isSameSchool(schoolId)
+      );
+      allow write: if isAuthenticated() && (
+        isCoreAdmin() || (isSchoolAdmin() && isSameSchool(schoolId))
+      );
+    }
+    
+    match /divisions/{divisionId} {
+      allow read: if isAuthenticated() && (
+        isCoreAdmin() || 
+        isSameSchool(resource.data.schoolId) ||
+        isSameDivision(divisionId)
+      );
+      allow write: if isAuthenticated() && (
+        isCoreAdmin() || 
+        (isSchoolAdmin() && isSameSchool(resource.data.schoolId)) ||
+        (isDivisionAdmin() && isSameDivision(divisionId))
+      );
+    }
+    
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated() && (
+        isCoreAdmin() ||
+        isSameSchool(resource.data.schoolId) ||
+        isSameDivision(resource.data.divisionId) ||
+        isSameDepartment(departmentId)
+      );
+      allow write: if isAuthenticated() && (
+        isCoreAdmin() ||
+        (isSchoolAdmin() && isSameSchool(resource.data.schoolId)) ||
+        (isDivisionAdmin() && isSameDivision(resource.data.divisionId)) ||
+        (getUserRole() == 'department_head' && isSameDepartment(departmentId))
+      );
+    }
+
+    // === SCHEDULE SYSTEM RULES ===
+    
+    match /master_schedules/{scheduleId} {
+      allow read: if isAuthenticated() && isSameSchool(resource.data.schoolId);
+      allow write: if isAuthenticated() && isCoreAdmin() && isSameSchool(resource.data.schoolId);
+    }
+    
+    match /educator_schedules/{scheduleId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.educatorId ||  // Teachers can read their own schedule
+        canManageUsers() ||                               // Admins can read schedules
+        canObserve()                                     // Observers can read schedules for observations
+      );
+      allow write: if isAuthenticated() && canManageUsers();
+    }
+    
+    match /daily_schedules/{dailyScheduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && canManageUsers();
+    }
+    
+    match /class_assignments/{assignmentId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.educatorId ||  // Teachers can read their assignments
+        canManageUsers() ||                               // Admins can read assignments
+        canObserve()                                     // Observers can read for observations
+      );
+      allow write: if isAuthenticated() && canManageUsers();
+    }
+
+    // === APPLET SYSTEM RULES ===
+
+    // Applet definitions and configurations
+    match /applets/{appletId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isCoreAdmin();
+    }
+    
+    match /school_applet_configs/{configId} {
+      allow read: if isAuthenticated() && isSameSchool(resource.data.schoolId);
+      allow write: if isAuthenticated() && isCoreAdmin() && isSameSchool(resource.data.schoolId);
+    }
+
+    // === OBSERVATION APPLET RULES ===
+
+    // Framework management
+    match /applets/observations/frameworks/{frameworkId} {
+      allow read: if isAuthenticated() && (
+        isSameSchool(resource.data.schoolId) ||
+        resource.data.isPublic == true
+      );
+      allow write: if isAuthenticated() && (
+        isCoreAdmin() ||
+        (canObserve() && isSameSchool(resource.data.schoolId))
+      );
+    }
+    
+    match /applets/observations/framework_sections/{sectionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && canObserve();
+    }
+    
+    match /applets/observations/questions/{questionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && canObserve();
+    }
+
+    // Observation data - most critical security rules
+    match /applets/observations/observations/{observationId} {
+      allow create: if isAuthenticated() && canObserve() && (
+        request.resource.data.observerId == request.auth.uid &&  // Observer must be the creator
+        isSameSchool(request.resource.data.schoolId)             // Must be same school
+      );
+      
+      allow read: if isAuthenticated() && (
+        resource.data.observerId == request.auth.uid ||          // Observer can read their observations
+        resource.data.subjectId == request.auth.uid ||           // Subject can read observations of them
+        (isCoreAdmin() && isSameSchool(resource.data.schoolId)) ||  // School admins
+        (isDivisionAdmin() && isSameDivision(resource.data.divisionId))  // Division admins
+      );
+      
+      allow update: if isAuthenticated() && (
+        (resource.data.observerId == request.auth.uid && observationIsEditable()) ||  // Observer can edit their drafts
+        (isCoreAdmin() && isSameSchool(resource.data.schoolId))   // Admins can always edit
+      );
+      
+      allow delete: if isAuthenticated() && (
+        (resource.data.observerId == request.auth.uid && resource.data.status == 'draft') ||  // Observers can delete drafts
+        getUserRole() == 'super_admin'                            // Only super admins can delete submitted observations
+      );
+    }
+    
+    // Helper function to check if observation can be edited
+    function observationIsEditable() {
+      return resource.data.status in ['draft', 'in_progress'];
+    }
+
+    match /applets/observations/observation_responses/{responseId} {
+      allow read, write: if isAuthenticated() && canObserve();
+    }
+
+    // Analytics data - read-only for most users
+    match /applets/observations/analytics/{analyticsId} {
+      allow read: if isAuthenticated() && (
+        hasPermission('applets.observations.analytics.read') ||
+        isCoreAdmin()
+      );
+      allow write: if false;  // Analytics are generated, not manually written
+    }
+    
+    match /applets/observations/reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        isCoreAdmin() ||
+        (resource.data.createdBy == request.auth.uid) ||
+        (isDivisionAdmin() && isSameDivision(resource.data.divisionId))
+      );
+      allow write: if isAuthenticated() && canObserve();
+    }
+
+    // === SYSTEM ADMINISTRATION ===
+
+    match /system_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && getUserRole() in ['super_admin', 'system_admin'];
+    }
+    
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated() && isCoreAdmin();
+      allow write: if false;  // Logs are system-generated only
+    }
+    
+    match /error_logs/{errorId} {
+      allow read: if isAuthenticated() && getUserRole() in ['super_admin', 'system_admin'];
+      allow write: if false;  // Logs are system-generated only
+    }
+
+    // === COMMUNICATION SYSTEM ===
+    
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.recipientId == request.auth.uid ||
+        isCoreAdmin()
+      );
+      allow write: if isAuthenticated() && (
+        canManageUsers() ||
+        resource.data.senderId == request.auth.uid
+      );
+    }
+    
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated() && (
+        isSameSchool(resource.data.schoolId) ||
+        resource.data.isGlobal == true
+      );
+      allow write: if isAuthenticated() && (
+        canManageUsers() ||
+        (resource.data.authorId == request.auth.uid && resource.data.status == 'draft')
+      );
+    }
+
+    // === USER-GENERATED CONTENT RULES ===
+
+    // User profiles and preferences (subset of user data with more permissive rules)
+    match /user_profiles/{userId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isSameSchool(resource.data.schoolId)
+      );
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    match /user_preferences/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // === DEFAULT DENY RULE ===
+    // All other documents are denied by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

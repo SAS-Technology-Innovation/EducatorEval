@@ -12,7 +12,11 @@
     "deploy": "npm run build && firebase deploy",
     "deploy:functions": "firebase deploy --only functions",
     "deploy:hosting": "firebase deploy --only hosting",
-    "deploy:rules": "firebase deploy --only firestore:rules,storage:rules"
+    "deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
+    "emulators": "firebase emulators:start",
+    "emulators:export": "firebase emulators:export ./emulator-data",
+    "emulators:import": "firebase emulators:start --import=./emulator-data",
+    "dev:emulated": "concurrently \"firebase emulators:start\" \"astro dev\""
   },
   "dependencies": {
     "@astrojs/react": "^4.3.0",

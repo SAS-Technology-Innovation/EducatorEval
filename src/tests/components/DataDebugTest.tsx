@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { enhancedApi, initializeMockData } from '../api/enhancedApi';
+import { api } from '../../api/api';
 import type { User, School, Division, Department } from '../types';
 
 const DataDebugTest: React.FC = () => {
@@ -22,10 +22,10 @@ const DataDebugTest: React.FC = () => {
       
       console.log('📡 Loading data from API...');
       const [usersData, schoolsData, divisionsData, departmentsData] = await Promise.all([
-        enhancedApi.users.list(),
-        enhancedApi.schools.list(),
-        enhancedApi.divisions.list(),
-        enhancedApi.departments.list()
+        api.users.list(),
+        api.schools.list(),
+        api.divisions.list(),
+        api.departments.list()
       ]);
 
       console.log('📊 Data loaded:', {

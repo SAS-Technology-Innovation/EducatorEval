@@ -1,0 +1,16 @@
+{
+  "name": "EducatorEval Platform",
+  "short_name": "EduEval",
+  "description": "Educational Employee Experience Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

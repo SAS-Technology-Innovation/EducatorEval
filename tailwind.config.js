@@ -4,46 +4,61 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        serif: ['Merriweather', 'Georgia', 'serif'],
+        sans: ['Poppins', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        serif: ['Poppins', 'Georgia', 'serif'],
+        bebas: ['Bebas Neue', 'cursive'],
+        poppins: ['Poppins', 'sans-serif'],
       },
       colors: {
         'sas': {
+          // Singapore American School Brand Colors
+          navy: {
+            50: '#f0f4ff',
+            100: '#e0e9ff',
+            200: '#c7d6ff',
+            300: '#a5b8ff',
+            400: '#8290ff',
+            500: '#5f69ff',
+            600: '#1A4190', // Primary SAS Navy
+            700: '#14357a',
+            800: '#0f2963',
+            900: '#0a1d4c',
+          },
+          red: {
+            50: '#fef2f2',
+            100: '#fee2e2',
+            200: '#fecaca',
+            300: '#fca5a5',
+            400: '#f87171',
+            500: '#ef4444',
+            600: '#E51322', // Primary SAS Red
+            700: '#c8111e',
+            800: '#a01019',
+            900: '#7f0d15',
+          },
           blue: {
             50: '#eff6ff',
-            100: '#dbeafe',
+            100: '#dbeafe', 
             200: '#bfdbfe',
             300: '#93c5fd',
             400: '#60a5fa',
             500: '#3b82f6',
-            600: '#1e40af', // Primary SAS blue
-            700: '#1e3a8a',
-            800: '#1e3a8a',
+            600: '#2563eb',
+            700: '#1d4ed8',
+            800: '#1e40af',
             900: '#1e3a8a',
           },
           green: {
-            50: '#ecfdf5',
-            100: '#d1fae5',
-            200: '#a7f3d0',
-            300: '#6ee7b7',
-            400: '#34d399',
-            500: '#10b981',
-            600: '#059669', // Primary SAS green
-            700: '#047857',
-            800: '#065f46',
-            900: '#064e3b',
-          },
-          gold: {
-            50: '#fffbeb',
-            100: '#fef3c7',
-            200: '#fde68a',
-            300: '#fcd34d',
-            400: '#fbbf24',
-            500: '#f59e0b',
-            600: '#d97706', // SAS accent gold
-            700: '#b45309',
-            800: '#92400e',
-            900: '#78350f',
+            50: '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d',
           },
           purple: {
             50: '#faf5ff',
@@ -52,27 +67,32 @@ export default {
             300: '#d8b4fe',
             400: '#c084fc',
             500: '#a855f7',
-            600: '#9333ea', // SAS accent purple
+            600: '#9333ea',
             700: '#7c3aed',
             800: '#6b21a8',
             900: '#581c87',
           },
           gray: {
-            50: '#f8fafc',
-            100: '#f1f5f9',
-            200: '#e2e8f0',
-            300: '#cbd5e1',
-            400: '#94a3b8',
-            500: '#64748b', // SAS neutral gray
-            600: '#475569',
-            700: '#334155',
-            800: '#1e293b',
-            900: '#0f172a',
+            50: '#f9fafb',
+            100: '#f3f4f6',
+            200: '#e5e7eb',
+            300: '#d1d5db',
+            400: '#9ca3af',
+            500: '#6b7280',
+            600: '#4b5563',
+            700: '#374151',
+            800: '#1f2937',
+            900: '#111827',
           }
         }
       },
       backgroundColor: {
-        'sas-background': '#fafafa',
+        'sas-background': '#fafbfc',
+        'sas-background-alt': '#f8fafc',
+      },
+      backgroundImage: {
+        'sas-gradient': 'linear-gradient(135deg, #1A4190 0%, #E51322 100%)',
+        'sas-hero': "url('https://resources.finalsite.net/images/f_auto,q_auto/v1750142054/sas/rwcc7srqzco0i28f9lwo/2018HighSchoolSpiritSCOTTAWOODWARD_DSC0313final_website.jpg')",
       }
     },
   },

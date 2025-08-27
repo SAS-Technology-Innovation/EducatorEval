@@ -2,18 +2,26 @@ package models
 
 import "time"
 
-// School represents the top-level organization
+// School represents a private or international school (top-level organization)
 type School struct {
 	ID        string `firestore:"id" json:"id"`
 	Name      string `firestore:"name" json:"name"`
 	ShortName string `firestore:"shortName" json:"shortName"`
-	District  string `firestore:"district,omitempty" json:"district,omitempty"`
+	Type      SchoolType `firestore:"type" json:"type"` // private, international, etc.
 	Address   *Address `firestore:"address" json:"address"`
 	ContactInfo *ContactInfo `firestore:"contactInfo" json:"contactInfo"`
 
 	// Leadership
-	SuperintendentID string   `firestore:"superintendentId,omitempty" json:"superintendentId,omitempty"`
+	HeadOfSchoolID   string   `firestore:"headOfSchoolId,omitempty" json:"headOfSchoolId,omitempty"`
 	PrincipalIDs     []string `firestore:"principalIds" json:"principalIds"`
+	AssistantPrincipalIDs []string `firestore:"assistantPrincipalIds" json:"assistantPrincipalIds"`
+
+	// School Identity
+	Mission     string   `firestore:"mission,omitempty" json:"mission,omitempty"`
+	Vision      string   `firestore:"vision,omitempty" json:"vision,omitempty"`
+	Values      []string `firestore:"values,omitempty" json:"values,omitempty"`
+	Languages   []string `firestore:"languages" json:"languages"` // For international schools
+	Curriculum  []string `firestore:"curriculum" json:"curriculum"` // IB, Cambridge, AP, etc.
 
 	// Applet Configuration
 	EnabledApplets []string               `firestore:"enabledApplets" json:"enabledApplets"`
@@ -27,6 +35,17 @@ type School struct {
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time `firestore:"updatedAt" json:"updatedAt"`
 }
+
+// SchoolType defines the type of school
+type SchoolType string
+
+const (
+	PrivateSchool      SchoolType = "private"
+	InternationalSchool SchoolType = "international" 
+	BilingualSchool    SchoolType = "bilingual"
+	ReligiousSchool    SchoolType = "religious"
+	SpecialtySchool    SchoolType = "specialty"
+)
 
 // Division represents a school division (Elementary, Middle, High, etc.)
 type Division struct {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { observationApi } from '../lib/api';
+import { observationApi } from '../api';
 import { CRPObservation } from '../types/crp-observation';
 import { useAuthStore } from '../stores/authStore';
 

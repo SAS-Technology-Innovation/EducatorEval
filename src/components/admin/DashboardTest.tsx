@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Building2, CheckCircle, AlertCircle } from 'lucide-react';
-import { enhancedApi, initializeMockData } from '../api/enhancedApi';
+import { api } from '../../api/api';
 
 const AdminDashboardTest: React.FC = () => {
   const [stats, setStats] = useState({
@@ -19,11 +19,10 @@ const AdminDashboardTest: React.FC = () => {
     setLoading(true);
     try {
       console.log('Loading admin stats...');
-      initializeMockData();
       
       const [users, schools] = await Promise.all([
-        enhancedApi.users.list(),
-        enhancedApi.schools.list()
+        api.users.list(),
+        api.schools.list()
       ]);
 
       const activeUsers = users.filter(u => u.isActive).length;

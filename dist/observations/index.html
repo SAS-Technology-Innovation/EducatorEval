@@ -1,2 +1,82 @@
-<!DOCTYPE html><html lang="en" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="description" content="Educational Employee Experience Platform"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Observations - EduPlatform</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet"><style>:root{--sas-blue: #1e40af;--sas-blue-light: #3b82f6;--sas-blue-dark: #1e3a8a;--sas-green: #059669;--sas-green-light: #10b981;--sas-green-dark: #047857;--sas-gold: #d97706;--sas-gold-light: #f59e0b;--sas-gray: #64748b;--sas-gray-light: #94a3b8;--sas-gray-dark: #475569;--sas-background: #fafafa;--sas-white: #ffffff}html,body,#app[data-astro-cid-sckkx6r4]{height:100%;margin:0;padding:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;background-color:var(--sas-background);color:#1f2937;line-height:1.6}.font-serif[data-astro-cid-sckkx6r4]{font-family:Merriweather,Georgia,serif}
-</style></head> <body class="antialiased" data-astro-cid-sckkx6r4> <div id="app" data-astro-cid-sckkx6r4>  <div id="observations-root" class="min-h-screen bg-gray-50"></div>  </div>  </body> </html> <script type="module" src="/_astro/observations.astro_astro_type_script_index_0_lang.K7A-Gr8O.js"></script>
+<!DOCTYPE html><html lang="en" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="description" content="Educational Employee Experience Platform"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Observations - EducatorEval</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="manifest" href="/manifest.json"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/_astro/dashboard.BuLgs-7t.css"></head> <body class="antialiased" data-astro-cid-sckkx6r4> <div id="app" data-astro-cid-sckkx6r4>  <div id="observations-wrapper"> <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBEoqKHKKyLTr8FNnZpGWGVqBf39eVq-lE",
+        authDomain: "educator-evaluations.firebaseapp.com",
+        projectId: "educator-evaluations",
+        storageBucket: "educator-evaluations.firebasestorage.app",
+        messagingSenderId: "164055495572",
+        appId: "1:164055495572:web:4e9e61b9be7f0b35b8ac75"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+
+      function showObservationsPage(user) {
+        document.getElementById('observations-wrapper').innerHTML = `
+          <div class="min-h-screen bg-gray-50">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
+              <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                  <div class="flex items-center">
+                    <a href="/dashboard" class="text-blue-600 hover:text-blue-800 mr-4">← Dashboard</a>
+                    <h1 class="text-2xl font-bold text-gray-900">Observations</h1>
+                  </div>
+                  <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-600">${user.email}</span>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+              <div class="px-4 py-6 sm:px-0">
+                
+                <!-- Create New Observation Button -->
+                <div class="mb-6">
+                  <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    + Create New Observation
+                  </button>
+                </div>
+
+                <!-- Observations List -->
+                <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                  <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                      Your Observations
+                    </h3>
+                    <p class="text-gray-500">No observations found. Click "Create New Observation" to get started.</p>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        `;
+      }
+
+      function showLoading() {
+        document.getElementById('observations-wrapper').innerHTML = `
+          <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+              <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600">Loading...</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Initialize
+      showLoading();
+      
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          showObservationsPage(user);
+        } else {
+          window.location.href = '/login';
+        }
+      });
+    </script> </div>  </div>  </body> </html>

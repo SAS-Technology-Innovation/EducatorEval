@@ -1,0 +1,12 @@
+---
+// Admin Users Management Page
+import Layout from '../../layouts/Layout.astro';
+import PlatformLayout from '../../components/layout/PlatformLayout.tsx';
+import AuthAdminWrapper from '../../components/providers/AuthAdminWrapper.tsx';
+---
+
+<Layout title="User Management - Admin">
+  <PlatformLayout currentPath="/admin/users" client:load>
+    <AuthAdminWrapper client:load defaultTab="users" />
+  </PlatformLayout>
+</Layout>
