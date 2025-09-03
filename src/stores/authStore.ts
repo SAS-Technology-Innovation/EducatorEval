@@ -3,6 +3,10 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { 
   signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut, 
   onAuthStateChanged,
   User as FirebaseUser
@@ -21,6 +25,9 @@ interface AuthState {
 
   // Actions
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   initialize: () => () => void;
   clearError: () => void;
@@ -54,6 +61,85 @@ export const useAuthStore = create<AuthState>()(
           error: error instanceof Error ? error.message : 'Sign in failed',
           isLoading: false 
         });
+        throw error;
+      }
+    },
+
+    // Sign up with email and password
+    signUp: async (email: string, password: string, displayName: string) => {
+      try {
+        set({ isLoading: true, error: null });
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        // Create user profile in Firestore
+        await usersService.create({
+          id: userCredential.user.uid,
+          email: email,
+          displayName: displayName,
+          role: 'educator', // Default role
+          status: 'active',
+          permissions: ['observations.view'],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        // User data will be loaded by the auth state listener
+      } catch (error) {
+        set({ 
+          error: error instanceof Error ? error.message : 'Sign up failed',
+          isLoading: false 
+        });
+        throw error;
+      }
+    },
+
+    // Sign in with Google
+    signInWithGoogle: async () => {
+      try {
+        set({ isLoading: true, error: null });
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        
+        // Check if user exists in Firestore, if not create profile
+        let existingUser: any = null;
+        try {
+          existingUser = await usersService.getById(result.user.uid);
+        } catch (error) {
+          // User doesn't exist, create new profile
+        }
+        
+        if (!existingUser) {
+          await usersService.create({
+            id: result.user.uid,
+            email: result.user.email || '',
+            displayName: result.user.displayName || '',
+            photoURL: result.user.photoURL || '',
+            role: 'educator', // Default role
+            status: 'active',
+            permissions: ['observations.view'],
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        }
+        
+        // User data will be loaded by the auth state listener
+      } catch (error) {
+        set({ 
+          error: error instanceof Error ? error.message : 'Google sign in failed',
+          isLoading: false 
+        });
+        throw error;
+      }
+    },
+
+    // Send password reset email
+    sendPasswordReset: async (email: string) => {
+      try {
+        set({ error: null });
+        await sendPasswordResetEmail(auth, email);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
+        set({ error: errorMessage });
         throw error;
       }
     },
@@ -121,52 +207,83 @@ export const useAuthStore = create<AuthState>()(
               }
             }
             
-            // STEP 3: Only create new user if NO existing record found AND user is authorized
+            // STEP 3: Create new user if NO existing record found
             if (!userData && firebaseUser.email) {
-              console.log('❓ No existing user record found for:', firebaseUser.email);
+              console.log('➕ Creating new user profile for:', firebaseUser.email);
               
-              // TODO: Add authorization check here
-              // For now, we'll prevent auto-creation to stop duplicates
-              console.log('⚠️ Auto-creation disabled to prevent duplicates');
-              console.log('📧 Email:', firebaseUser.email);
-              console.log('🆔 UID:', firebaseUser.uid);
-              console.log('👤 Display Name:', firebaseUser.displayName);
-              console.log('');
-              console.log('🚫 User not found in authorized users database.');
-              console.log('Please contact an administrator to create your user profile.');
-              
-              // Create minimal user object for session but don't save to database
-              userData = {
-                id: firebaseUser.uid,
-                email: firebaseUser.email,
-                firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
-                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-                displayName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                employeeId: '',
-                schoolId: '',
-                divisionId: '',
-                departmentId: '',
-                primaryRole: 'staff',
-                secondaryRoles: [],
-                permissions: [],
-                jobTitle: 'secretary',
-                certifications: [],
-                experience: '',
-                subjects: [],
-                grades: [],
-                specializations: [],
-                planningPeriods: [],
-                languages: ['English'],
-                isActive: false,
-                accountStatus: 'unauthorized',
-                lastLogin: new Date(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                metadata: { 
-                  authOnly: true, 
-                  needsAuthorization: true 
-                }
-              };
+              // Auto-create user profile for development
+              try {
+                const newUserData = {
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
+                  lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+                  displayName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                  employeeId: `EMP-${firebaseUser.uid.slice(-6).toUpperCase()}`,
+                  schoolId: 'sas-main',
+                  divisionId: 'general',
+                  departmentId: 'general',
+                  primaryRole: 'educator' as const,
+                  secondaryRoles: [],
+                  permissions: ['observations.view', 'profile.edit'],
+                  jobTitle: 'teacher' as const,
+                  certifications: [],
+                  experience: '',
+                  subjects: [],
+                  grades: [],
+                  specializations: [],
+                  planningPeriods: [],
+                  languages: ['English'],
+                  isActive: true,
+                  accountStatus: 'active' as const,
+                  lastLogin: new Date(),
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  metadata: { 
+                    autoCreated: true,
+                    source: 'firebase_auth'
+                  }
+                };
+                
+                userData = await usersService.create(newUserData) as User;
+                console.log('✅ Auto-created user profile:', userData?.email);
+                
+              } catch (createError) {
+                console.error('❌ Failed to auto-create user profile:', createError);
+                
+                // Fallback to minimal user object if Firestore creation fails
+                userData = {
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
+                  lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+                  displayName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                  employeeId: `EMP-${firebaseUser.uid.slice(-6).toUpperCase()}`,
+                  schoolId: 'sas-main',
+                  divisionId: 'general',
+                  departmentId: 'general',
+                  primaryRole: 'educator',
+                  secondaryRoles: [],
+                  permissions: ['observations.view'],
+                  jobTitle: 'teacher',
+                  certifications: [],
+                  experience: '',
+                  subjects: [],
+                  grades: [],
+                  specializations: [],
+                  planningPeriods: [],
+                  languages: ['English'],
+                  isActive: true,
+                  accountStatus: 'active',
+                  lastLogin: new Date(),
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  metadata: { 
+                    authOnly: true,
+                    firestoreFailed: true
+                  }
+                };
+              }
             }
             
             set({ 
