@@ -472,6 +472,39 @@ export const userOperations = {
   },
 
   /**
+   * Get user by ID
+   */
+  async getById(id: string): Promise<User | null> {
+    try {
+      const docSnap = await getDoc(doc(db, 'users', id));
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as User;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      throw new Error('Failed to fetch user');
+    }
+  },
+
+  /**
+   * Create new user
+   */
+  async create(user: Omit<User, 'id'>): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, 'users'), {
+        ...user,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new Error('Failed to create user');
+    }
+  },
+
+  /**
    * Update user profile
    */
   async update(id: string, updates: Partial<User>): Promise<void> {

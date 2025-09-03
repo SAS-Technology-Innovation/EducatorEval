@@ -274,6 +274,7 @@ export const shouldUseMockData = () => {
   // You can set this to true if you want to use mock data for testing
   const forceMockData = false; // Set to true to use mock data
   
-  // Use mock data only if explicitly requested or if Firebase config is missing
-  return forceMockData || !process.env.PUBLIC_FIREBASE_API_KEY;
+  // In Astro, use import.meta.env instead of process.env for client-side code
+  // Since we have Firebase configured, we'll default to Firestore
+  return forceMockData;
 };

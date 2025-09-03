@@ -18,8 +18,9 @@ import { formatDate, formatDateTime } from '../utils';
 import { useAuth } from '../hooks/useAuth';
 import { useObservations } from '../hooks/useObservations';
 import { frameworkService } from '../services/frameworkService';
+import { getAvailableFrameworks } from '../services/seedFrameworks';
 import NewObservationModal from './NewObservationModal';
-import { Observation } from '../types';
+import { Observation, Framework } from '../types';
 
 interface ObservationDashboardProps {}
 
@@ -29,11 +30,31 @@ const ObservationDashboard: React.FC<ObservationDashboardProps> = () => {
   const [filteredObservations, setFilteredObservations] = useState<Observation[]>([]);
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const [loadingFrameworks, setLoadingFrameworks] = useState(true);
   const [showNewObservationModal, setShowNewObservationModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+
+  // Load frameworks on component mount
+  useEffect(() => {
+    const loadFrameworks = async () => {
+      try {
+        console.log('🔥 ObservationDashboard: Loading frameworks...');
+        const frameworksList = await getAvailableFrameworks();
+        setFrameworks(frameworksList);
+        console.log('🔥 ObservationDashboard: Loaded frameworks:', frameworksList);
+      } catch (error) {
+        console.error('❌ ObservationDashboard: Error loading frameworks:', error);
+      } finally {
+        setLoadingFrameworks(false);
+      }
+    };
+
+    loadFrameworks();
+  }, []);
 
   // Filter observations based on active tab and search query
   useEffect(() => {
@@ -91,8 +112,20 @@ const ObservationDashboard: React.FC<ObservationDashboardProps> = () => {
   };
 
   const getFrameworkName = (frameworkId: string) => {
-    const framework = frameworkService.getFrameworkOptions().find(f => f.id === frameworkId);
-    return framework ? framework.label : frameworkId;
+    // First try to get from loaded frameworks (Firestore data)
+    const framework = frameworks.find(f => f.id === frameworkId);
+    if (framework) {
+      return framework.name;
+    }
+    
+    // Fallback to framework service options
+    const frameworkOption = frameworkService.getFrameworkOptions().find(f => f.id === frameworkId);
+    if (frameworkOption) {
+      return frameworkOption.label;
+    }
+    
+    // Final fallback to the ID itself
+    return frameworkId;
   };
 
   const getStatusBadge = (status: string) => {
@@ -131,7 +164,7 @@ const ObservationDashboard: React.FC<ObservationDashboardProps> = () => {
                 onClick={() => window.location.href = '/schedule'}
                 className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <Calendar className="w-4 h-4 mr-2" />
+                <Calendar className="w-4 h-4 mr-3" />
                 Schedule Observation
               </button>
               <button
@@ -143,7 +176,7 @@ const ObservationDashboard: React.FC<ObservationDashboardProps> = () => {
                 }}
                 className="flex items-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-3" />
                 Start Instant Observation
               </button>
             </div>

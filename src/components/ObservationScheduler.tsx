@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { teacherOperations, scheduledObservationOperations } from '../firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
-import { Teacher, Observation } from '../types';
+import { getAvailableFrameworks } from '../services/seedFrameworks';
+import { Framework, Teacher, Observation } from '../types';
 
 interface TeacherData {
   id: string;
@@ -59,12 +60,67 @@ const ObservationScheduler: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [teachers, setTeachers] = useState<TeacherData[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const [loadingFrameworks, setLoadingFrameworks] = useState(true);
   const [scheduledObservations, setScheduledObservations] = useState<ScheduledObservationData[]>([]);
 
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
         console.log('🔥 ObservationScheduler: Starting to fetch teachers from Firestore...');
+        
+        // Check if we're in demo mode or if authentication failed
+        const isDemoMode = sessionStorage.getItem('demoLogin') === 'true';
+        
+        if (isDemoMode) {
+          console.log('🎯 ObservationScheduler: Using demo mode, loading mock teachers...');
+          // Use mock teachers for demo
+          const mockTeachers: TeacherData[] = [
+            {
+              id: 'teacher1',
+              name: 'Sarah Johnson',
+              subject: 'Mathematics',
+              grade: '9th Grade',
+              room: 'A101',
+              email: 'sarah.johnson@school.edu',
+              schedule: {
+                'Period 1': { time: '8:00-8:45', class: 'Algebra I' },
+                'Period 2': { time: '8:50-9:35', class: 'Geometry' },
+                'Period 3': { time: '9:40-10:25', class: 'Algebra I' },
+                'Period 4': { time: '10:45-11:30', class: 'Free Period' },
+                'Period 5': { time: '11:35-12:20', class: 'Algebra II' },
+                'Period 6': { time: '1:05-1:50', class: 'Statistics' },
+                'Period 7': { time: '1:55-2:40', class: 'Free Period' },
+              },
+              availability: 'high',
+              lastObservation: '2025-08-15'
+            },
+            {
+              id: 'teacher2',
+              name: 'Michael Chen',
+              subject: 'Science',
+              grade: '10th Grade',
+              room: 'B205',
+              email: 'michael.chen@school.edu',
+              schedule: {
+                'Period 1': { time: '8:00-8:45', class: 'Biology' },
+                'Period 2': { time: '8:50-9:35', class: 'Chemistry' },
+                'Period 3': { time: '9:40-10:25', class: 'Biology' },
+                'Period 4': { time: '10:45-11:30', class: 'Lab Prep' },
+                'Period 5': { time: '11:35-12:20', class: 'Physics' },
+                'Period 6': { time: '1:05-1:50', class: 'Chemistry' },
+                'Period 7': { time: '1:55-2:40', class: 'Free Period' },
+              },
+              availability: 'medium',
+              lastObservation: '2025-08-20'
+            }
+          ];
+          setTeachers(mockTeachers);
+          console.log('🎯 ObservationScheduler: Successfully set mock teachers:', mockTeachers);
+          setLoadingTeachers(false);
+          return;
+        }
+        
         const teachersList = await teacherOperations.getAll();
         console.log('🔥 ObservationScheduler: Fetched teachers from Firestore:', teachersList);
         
@@ -93,7 +149,31 @@ const ObservationScheduler: React.FC = () => {
         console.log('🔥 ObservationScheduler: Successfully set teachers:', transformedTeachers);
       } catch (error) {
         console.error('❌ ObservationScheduler: Error fetching teachers:', error);
-        alert('Failed to load teachers. Check console for details.');
+        
+        // Fall back to mock data if Firestore fails
+        console.log('🎯 ObservationScheduler: Falling back to mock teachers due to error...');
+        const mockTeachers: TeacherData[] = [
+          {
+            id: 'teacher1',
+            name: 'Sarah Johnson',
+            subject: 'Mathematics',
+            grade: '9th Grade',
+            room: 'A101',
+            email: 'sarah.johnson@school.edu',
+            schedule: {
+              'Period 1': { time: '8:00-8:45', class: 'Algebra I' },
+              'Period 2': { time: '8:50-9:35', class: 'Geometry' },
+              'Period 3': { time: '9:40-10:25', class: 'Algebra I' },
+              'Period 4': { time: '10:45-11:30', class: 'Free Period' },
+              'Period 5': { time: '11:35-12:20', class: 'Algebra II' },
+              'Period 6': { time: '1:05-1:50', class: 'Statistics' },
+              'Period 7': { time: '1:55-2:40', class: 'Free Period' },
+            },
+            availability: 'high',
+            lastObservation: '2025-08-15'
+          }
+        ];
+        setTeachers(mockTeachers);
       } finally {
         setLoadingTeachers(false);
       }
@@ -103,9 +183,117 @@ const ObservationScheduler: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const fetchFrameworks = async () => {
+      try {
+        console.log('🔥 ObservationScheduler: Starting to fetch frameworks...');
+        
+        // Check if we're in demo mode
+        const isDemoMode = sessionStorage.getItem('demoLogin') === 'true';
+        
+        if (isDemoMode) {
+          console.log('🎯 ObservationScheduler: Using demo mode, loading mock frameworks...');
+          // Use mock frameworks for demo
+          const mockFrameworks: Framework[] = [
+            {
+              id: 'framework1',
+              name: 'Danielson Framework',
+              description: 'A comprehensive teaching evaluation framework',
+              version: '1.0',
+              status: 'active',
+              lastModified: new Date().toISOString(),
+              tags: ['teaching', 'evaluation'],
+              sections: []
+            }
+          ];
+          setFrameworks(mockFrameworks);
+          
+          // Set default framework
+          if (!newObservation.framework) {
+            setNewObservation(prev => ({ ...prev, framework: mockFrameworks[0].id }));
+          }
+          
+          console.log('🎯 ObservationScheduler: Successfully set mock frameworks:', mockFrameworks);
+          setLoadingFrameworks(false);
+          return;
+        }
+        
+        const frameworksList = await getAvailableFrameworks();
+        console.log('🔥 ObservationScheduler: Fetched frameworks:', frameworksList);
+        
+        setFrameworks(frameworksList);
+        
+        // Set default framework to the first active framework if none is selected
+        if (frameworksList.length > 0 && !newObservation.framework) {
+          const defaultFramework = frameworksList.find(f => f.status === 'active') || frameworksList[0];
+          setNewObservation(prev => ({ ...prev, framework: defaultFramework.id }));
+        }
+        
+        console.log('🔥 ObservationScheduler: Successfully set frameworks:', frameworksList);
+      } catch (error) {
+        console.error('❌ ObservationScheduler: Error fetching frameworks:', error);
+        
+        // Fall back to mock data if frameworks fail to load
+        console.log('🎯 ObservationScheduler: Falling back to mock frameworks due to error...');
+        const mockFrameworks: Framework[] = [
+          {
+            id: 'framework1',
+            name: 'Danielson Framework',
+            description: 'A comprehensive teaching evaluation framework',
+            version: '1.0',
+            status: 'active',
+            lastModified: new Date().toISOString(),
+            tags: ['teaching', 'evaluation'],
+            sections: []
+          }
+        ];
+        setFrameworks(mockFrameworks);
+        
+        // Set default framework
+        if (!newObservation.framework) {
+          setNewObservation(prev => ({ ...prev, framework: mockFrameworks[0].id }));
+        }
+      } finally {
+        setLoadingFrameworks(false);
+      }
+    };
+
+    fetchFrameworks();
+  }, []);
+
+  useEffect(() => {
     const fetchScheduledObservations = async () => {
       try {
         console.log('🔥 ObservationScheduler: Fetching scheduled observations from Firestore...');
+        
+        // Check if we're in demo mode
+        const isDemoMode = sessionStorage.getItem('demoLogin') === 'true';
+        
+        if (isDemoMode) {
+          console.log('🎯 ObservationScheduler: Using demo mode, loading mock scheduled observations...');
+          // Use mock scheduled observations for demo
+          const mockObservations: ScheduledObservationData[] = [
+            {
+              id: 'obs1',
+              teacherId: 'teacher1',
+              teacherName: 'Sarah Johnson',
+              date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
+              time: '09:00-09:45',
+              period: 'Period 2',
+              class: 'Algebra I',
+              room: 'A101',
+              observer: 'Demo Observer',
+              status: 'scheduled',
+              notes: 'Focus on student engagement strategies',
+              framework: 'framework1',
+              duration: 45,
+              priority: 'normal'
+            }
+          ];
+          setScheduledObservations(mockObservations);
+          console.log('🎯 ObservationScheduler: Successfully set mock scheduled observations:', mockObservations);
+          return;
+        }
+        
         const observations = await scheduledObservationOperations.getAll();
         console.log('🔥 ObservationScheduler: Fetched scheduled observations:', observations);
         
@@ -139,6 +327,10 @@ const ObservationScheduler: React.FC = () => {
         console.log('🔥 ObservationScheduler: Successfully set scheduled observations:', transformedObservations);
       } catch (error) {
         console.error('❌ ObservationScheduler: Error fetching scheduled observations:', error);
+        
+        // Fall back to empty array or mock data if needed
+        console.log('🎯 ObservationScheduler: Falling back to empty observations due to error...');
+        setScheduledObservations([]);
       }
     };
 
@@ -152,7 +344,7 @@ const ObservationScheduler: React.FC = () => {
     time: '', // This might be derived from period in a real app
     class: '', // This might be derived from period in a real app
     notes: '',
-    framework: 'CRP + All Frameworks',
+    framework: '', // Will be set when frameworks load
     duration: 15,
     priority: 'normal'
   });
@@ -196,55 +388,84 @@ const ObservationScheduler: React.FC = () => {
         return;
     }
 
+    // Check if we're in demo mode
+    const isDemoMode = sessionStorage.getItem('demoLogin') === 'true';
+
     try {
-      // Create observation for Firebase
-      const observationData: Omit<Observation, 'id'> = {
-        teacherId: newObservation.teacherId,
-        teacherName: teacher.name,
-        observerId: user?.id || 'test-observer',
-        observerName: user?.name || user?.email || 'Test Observer',
-        frameworkId: newObservation.framework.toLowerCase().replace(/\s+/g, '-'),
-        date: newObservation.date,
-        startTime: new Date(`${newObservation.date} ${scheduleData.time.split('-')[0]}`).toISOString(),
-        status: 'scheduled',
-        duration: newObservation.duration || 15,
-        responses: {},
-        comments: {},
-        overallComment: newObservation.notes,
-        classInfo: {
-          name: scheduleData.class,
-          subject: teacher.subject,
-          room: teacher.room,
+      if (isDemoMode) {
+        console.log('🎯 ObservationScheduler: Demo mode - creating observation locally...');
+        
+        // Create a local observation object for demo display
+        const localObservation: ScheduledObservationData = {
+          id: `demo-obs-${Date.now()}`, // Generate a demo ID
+          teacherId: newObservation.teacherId,
+          teacherName: teacher.name,
+          date: newObservation.date,
+          time: scheduleData.time,
           period: newObservation.period,
-          grade: teacher.grade
-        }
-      };
+          class: scheduleData.class,
+          room: teacher.room,
+          observer: 'Demo Observer',
+          status: 'scheduled',
+          notes: newObservation.notes,
+          framework: newObservation.framework,
+          duration: newObservation.duration,
+          priority: newObservation.priority,
+        };
 
-      console.log('🔥 ObservationScheduler: Creating observation in Firestore...', observationData);
-      const observationId = await scheduledObservationOperations.create(observationData);
-      console.log('🔥 ObservationScheduler: Successfully created observation with ID:', observationId);
-      
-      // Create a local observation object for display
-      const localObservation: ScheduledObservationData = {
-        id: observationId,
-        teacherId: newObservation.teacherId,
-        teacherName: teacher.name,
-        date: newObservation.date,
-        time: scheduleData.time,
-        period: newObservation.period,
-        class: scheduleData.class,
-        room: teacher.room,
-        observer: user?.name || user?.email || 'Test Observer',
-        status: 'scheduled',
-        notes: newObservation.notes,
-        framework: newObservation.framework,
-        duration: newObservation.duration,
-        priority: newObservation.priority,
-      };
+        setScheduledObservations([...scheduledObservations, localObservation]);
+        console.log('🎯 ObservationScheduler: Successfully created demo observation:', localObservation);
+        
+        alert('Demo observation scheduled successfully!');
+      } else {
+        // Create observation for Firebase
+        const observationData: Omit<Observation, 'id'> = {
+          teacherId: newObservation.teacherId,
+          teacherName: teacher.name,
+          observerId: user?.id || 'test-observer',
+          observerName: user?.name || user?.email || 'Test Observer',
+          frameworkId: newObservation.framework, // Now using the actual framework ID
+          date: newObservation.date,
+          startTime: new Date(`${newObservation.date} ${scheduleData.time.split('-')[0]}`).toISOString(),
+          status: 'scheduled',
+          duration: newObservation.duration || 15,
+          responses: {},
+          comments: {},
+          overallComment: newObservation.notes,
+          classInfo: {
+            name: scheduleData.class,
+            subject: teacher.subject,
+            room: teacher.room,
+            period: newObservation.period,
+            grade: teacher.grade
+          }
+        };
 
-      setScheduledObservations([...scheduledObservations, localObservation]);
+        console.log('🔥 ObservationScheduler: Creating observation in Firestore...', observationData);
+        const observationId = await scheduledObservationOperations.create(observationData);
+        console.log('🔥 ObservationScheduler: Successfully created observation with ID:', observationId);
+        
+        // Create a local observation object for display
+        const localObservation: ScheduledObservationData = {
+          id: observationId,
+          teacherId: newObservation.teacherId,
+          teacherName: teacher.name,
+          date: newObservation.date,
+          time: scheduleData.time,
+          period: newObservation.period,
+          class: scheduleData.class,
+          room: teacher.room,
+          observer: user?.name || user?.email || 'Test Observer',
+          status: 'scheduled',
+          notes: newObservation.notes,
+          framework: newObservation.framework,
+          duration: newObservation.duration,
+          priority: newObservation.priority,
+        };
 
-      console.log('🔥 ObservationScheduler: Added observation to local state');
+        setScheduledObservations([...scheduledObservations, localObservation]);
+        console.log('🔥 ObservationScheduler: Added observation to local state');
+      }
 
       setNewObservation({
         teacherId: '',
@@ -253,7 +474,7 @@ const ObservationScheduler: React.FC = () => {
         time: '',
         class: '',
         notes: '',
-        framework: 'CRP + All Frameworks',
+        framework: frameworks.length > 0 ? frameworks.find(f => f.status === 'active')?.id || frameworks[0].id : '',
         duration: 15,
         priority: 'normal'
       });
@@ -281,7 +502,29 @@ const ObservationScheduler: React.FC = () => {
   // Function to start observation - will navigate to live form
   const startObservation = (observation: ScheduledObservationData) => {
     console.log('Starting observation:', observation.id);
-    sessionStorage.setItem('currentObservationData', JSON.stringify(observation));
+    
+    // Get the framework name for the observation
+    const framework = frameworks.find(f => f.id === observation.framework);
+    const frameworkName = framework?.name || observation.framework;
+    
+    // Enhanced data to pass to observation form
+    const observationData = {
+      ...observation,
+      frameworkId: observation.framework,
+      frameworkName: frameworkName,
+      // Additional context for the mobile form
+      teacher: observation.teacherName,
+      teacherId: observation.teacherId,
+      subject: observation.class,
+      className: observation.class,
+      room: observation.room,
+      period: observation.period,
+      grade: teachers.find(t => t.id === observation.teacherId)?.grade || 'Unknown',
+      framework: observation.framework
+    };
+    
+    console.log('🔥 Passing observation data to mobile form:', observationData);
+    sessionStorage.setItem('newObservationData', JSON.stringify(observationData));
     window.location.href = `/observe`;
   };
 
@@ -368,7 +611,7 @@ const ObservationScheduler: React.FC = () => {
                     <p className="text-gray-500 mb-4">Schedule your first observation for this date</p>
                     <button
                       onClick={() => setSelectedView('create')}
-                      className="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-blue-600 mx-auto"
+                      className="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-3 hover:bg-blue-600 mx-auto"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Schedule Observation</span>
@@ -562,13 +805,22 @@ const ObservationScheduler: React.FC = () => {
                     value={newObservation.framework}
                     onChange={(e) => setNewObservation({...newObservation, framework: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    disabled={loadingFrameworks}
                   >
-                    <option value="CRP + All Frameworks">CRP + All Frameworks (Standard)</option>
-                    <option value="CRP Focus">CRP Focus Only</option>
-                    <option value="Tripod 7Cs">Tripod 7Cs Focus</option>
-                    <option value="CASEL + SEL">CASEL + SEL Focus</option>
-                    <option value="5 Daily Assessment">5 Daily Assessment Focus</option>
-                    <option value="Inclusive Practices">Inclusive Practices Focus</option>
+                    {loadingFrameworks ? (
+                      <option>Loading frameworks...</option>
+                    ) : frameworks.length === 0 ? (
+                      <option>No frameworks available</option>
+                    ) : (
+                      <>
+                        <option value="">Select a Framework</option>
+                        {frameworks.map((framework) => (
+                          <option key={framework.id} value={framework.id}>
+                            {framework.name}
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -644,7 +896,7 @@ const ObservationScheduler: React.FC = () => {
                 </button>
                 <button
                   onClick={handleScheduleObservation}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center space-x-2"
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center space-x-3"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Schedule Observation</span>

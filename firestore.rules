@@ -5,6 +5,8 @@ service cloud.firestore {
     // Allow authenticated users to read and write their own data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow read access for user lookups
+      allow read: if request.auth != null;
     }
     
     // Allow authenticated users to access teachers collection
@@ -22,8 +24,8 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
-    // For development/testing - remove in production
-    // Temporary: allow all operations for testing
+    // For development/testing - allow unauthenticated access
+    // Remove this in production and uncomment the auth rules above
     match /{document=**} {
       allow read, write: if true;
     }

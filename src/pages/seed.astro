@@ -14,14 +14,30 @@
       
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Seed Sample Data</h2>
-        <p class="text-gray-600 mb-6">Click the button below to populate the database with sample teachers and data.</p>
+        <p class="text-gray-600 mb-6">Click the buttons below to populate the database with sample data.</p>
         
-        <button
-          id="seed-btn"
-          class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Seed Teachers Data
-        </button>
+        <div class="space-y-4">
+          <button
+            id="seed-frameworks-btn"
+            class="w-full bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Seed Frameworks (Do This First)
+          </button>
+          
+          <button
+            id="seed-teachers-btn"
+            class="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Seed Teachers Data
+          </button>
+          
+          <button
+            id="seed-observations-btn"
+            class="w-full bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Seed Sample Observations
+          </button>
+        </div>
         
         <div id="results" class="mt-6 hidden">
           <div class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -42,27 +58,81 @@
 
   <script>
     import { seedTeachers } from '../services/seedData';
+    import { seedFrameworks } from '../services/seedFrameworks';
+    import { seedObservations } from '../services/seedObservations';
     
-    document.getElementById('seed-btn').addEventListener('click', async () => {
-      const btn = document.getElementById('seed-btn');
+    // Seed Frameworks
+    document.getElementById('seed-frameworks-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('seed-frameworks-btn');
       const results = document.getElementById('results');
       const error = document.getElementById('error');
       const errorMessage = document.getElementById('error-message');
       
       btn.disabled = true;
-      btn.textContent = 'Seeding...';
-      results.classList.add('hidden');
-      error.classList.add('hidden');
+      btn.textContent = 'Seeding Frameworks...';
+      results?.classList.add('hidden');
+      error?.classList.add('hidden');
+      
+      try {
+        await seedFrameworks();
+        results?.classList.remove('hidden');
+        results.querySelector('p').textContent = 'Frameworks have been seeded successfully!';
+      } catch (err) {
+        error?.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'Failed to seed frameworks';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Seed Frameworks (Do This First)';
+      }
+    });
+    
+    // Seed Teachers
+    document.getElementById('seed-teachers-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('seed-teachers-btn');
+      const results = document.getElementById('results');
+      const error = document.getElementById('error');
+      const errorMessage = document.getElementById('error-message');
+      
+      btn.disabled = true;
+      btn.textContent = 'Seeding Teachers...';
+      results?.classList.add('hidden');
+      error?.classList.add('hidden');
       
       try {
         await seedTeachers();
-        results.classList.remove('hidden');
-        btn.textContent = 'Seeding Complete';
+        results?.classList.remove('hidden');
+        results.querySelector('p').textContent = 'Teachers have been seeded successfully!';
       } catch (err) {
-        error.classList.remove('hidden');
-        errorMessage.textContent = err.message || 'Unknown error occurred';
+        error?.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'Failed to seed teachers';
+      } finally {
         btn.disabled = false;
-        btn.textContent = 'Try Again';
+        btn.textContent = 'Seed Teachers Data';
+      }
+    });
+    
+    // Seed Observations
+    document.getElementById('seed-observations-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('seed-observations-btn');
+      const results = document.getElementById('results');
+      const error = document.getElementById('error');
+      const errorMessage = document.getElementById('error-message');
+      
+      btn.disabled = true;
+      btn.textContent = 'Seeding Observations...';
+      results?.classList.add('hidden');
+      error?.classList.add('hidden');
+      
+      try {
+        await seedObservations();
+        results?.classList.remove('hidden');
+        results.querySelector('p').textContent = 'Sample observations have been seeded successfully!';
+      } catch (err) {
+        error?.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'Failed to seed observations';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Seed Sample Observations';
       }
     });
   </script>

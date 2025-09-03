@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Settings, Shield, Bell, Key, Save, AlertCircle, CheckCircle } from 'lucide-react';
-import Layout from './Layout';
+import PageWrapper from './PageWrapper';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../types';
 
@@ -87,15 +87,12 @@ const ProfilePage: React.FC = () => {
   ];
 
   return (
-    <Layout>
+    <PageWrapper 
+      title="Profile Settings" 
+      subtitle="Manage your account settings and preferences"
+    >
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto py-8 px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-            <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
-          </div>
-
           {/* Status Messages */}
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
@@ -365,7 +362,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </PageWrapper>
   );
 };
 

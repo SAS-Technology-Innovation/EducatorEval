@@ -7,11 +7,17 @@ import {
   BarChart3,
   Database,
   Calendar,
-  Eye
+  Eye,
+  User,
+  Search,
+  ChevronDown,
+  Settings,
+  LogOut,
+  UserCircle,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../types';
-import UserMenu from './UserMenu';
 
 interface LayoutProps {
   children: React.ReactNode;

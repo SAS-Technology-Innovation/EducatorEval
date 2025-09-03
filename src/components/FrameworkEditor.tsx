@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Edit,
@@ -11,38 +11,10 @@ import {
   FileText,
   X
 } from 'lucide-react';
-
-interface Question {
-  id: string;
-  text: string;
-  type: 'rating' | 'text' | 'multiselect' | 'single-select' | 'yes-no';
-  required: boolean;
-  scale?: number;
-  weight: number;
-  tags: string[];
-  helpText: string;
-  options?: string[];
-  frameworkAlignments: string[];
-}
-
-interface Section {
-  id: string;
-  title: string;
-  description: string;
-  weight: number;
-  questions: Question[];
-}
-
-interface Framework {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  status: 'active' | 'inactive' | 'draft';
-  lastModified: string;
-  tags: string[];
-  sections: Section[];
-}
+import { frameworkService } from '../services/frameworkService';
+import { getAvailableFrameworks } from '../services/seedFrameworks';
+import { frameworkOperations } from '../firebase/firestore';
+import { Framework, Section, Question } from '../types';
 
 export default function FrameworkEditor() {
   const [selectedFramework, setSelectedFramework] = useState('crp-in-action');
@@ -56,61 +28,61 @@ export default function FrameworkEditor() {
   const [frameworkTagInput, setFrameworkTagInput] = useState('');
   const [showEditSection, setShowEditSection] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
+  
+  // Dynamic framework loading from FrameworkService and Firestore
+  const [frameworks, setFrameworks] = useState<Record<string, Framework>>({});
+  const [loadingFrameworks, setLoadingFrameworks] = useState(true);
+  
+  // Load frameworks on component mount
+  useEffect(() => {
+    const loadFrameworks = async () => {
+      try {
+        console.log('🔥 FrameworkEditor: Loading frameworks from FrameworkService and Firestore...');
+        
+        // First get from FrameworkService (has the full 10 look-fors)
+        const serviceFrameworks = frameworkService.getAllFrameworks();
+        console.log('📋 FrameworkService frameworks:', serviceFrameworks);
+        
+        // Convert array to record for easier access
+        const frameworksRecord: Record<string, Framework> = {};
+        serviceFrameworks.forEach(fw => {
+          frameworksRecord[fw.id] = fw;
+        });
+        
+        setFrameworks(frameworksRecord);
+        console.log('✅ FrameworkEditor: Loaded frameworks successfully');
+      } catch (error) {
+        console.error('❌ FrameworkEditor: Error loading frameworks:', error);
+        // Fallback to empty state
+        setFrameworks({});
+      } finally {
+        setLoadingFrameworks(false);
+      }
+    };
 
-  const [frameworks, setFrameworks] = useState<Record<string, Framework>>({
-    'crp-in-action': {
-      id: 'crp-in-action',
-      name: 'CRP in Action: Integrated Observation Tool',
-      description: 'Comprehensive evaluation framework integrating Culturally Responsive Practices',
-      version: '1.0',
-      status: 'active',
-      lastModified: '2025-08-15',
-      tags: ['crp', 'culturally-responsive', 'assessment'],
-      sections: [
-        {
-          id: 'integrated-lookfors',
-          title: '10 Look-Fors: Integrated Observation',
-          description: 'Evidence-based look-fors aligned to multiple frameworks',
-          weight: 100,
-          questions: [
-            {
-              id: 'lookfor1',
-              text: 'The learning target is clearly communicated and relevant to students.',
-              type: 'rating',
-              required: true,
-              scale: 4,
-              weight: 10,
-              tags: ['learning-targets', 'clarity'],
-              helpText: 'Look for visible learning targets and student understanding',
-              frameworkAlignments: ['5-daily-assessment', 'crp-curriculum', 'tripod-clarify']
-            },
-            {
-              id: 'lookfor2', 
-              text: 'Teacher fosters an inclusive environment where all students feel belonging.',
-              type: 'rating',
-              required: true,
-              scale: 4,
-              weight: 10,
-              tags: ['belonging', 'inclusive'],
-              helpText: 'Observe inclusive language and cultural affirmation',
-              frameworkAlignments: ['crp-general', 'casel-social-awareness', 'panorama', 'tripod-care']
-            },
-            {
-              id: 'lookfor3',
-              text: 'Teacher checks for understanding and adjusts instruction.',
-              type: 'rating',
-              required: true,
-              scale: 4,
-              weight: 10,
-              tags: ['formative-assessment', 'responsive-teaching'],
-              helpText: 'Look for checks for understanding and instructional adjustments',
-              frameworkAlignments: ['5-daily-assessment', 'tripod-clarify', 'inclusive-practices']
-            }
-          ]
-        }
-      ]
+    loadFrameworks();
+  }, []);
+
+  // Save framework changes to Firestore
+  const saveFrameworkToFirestore = async (framework: Framework) => {
+    try {
+      console.log('💾 FrameworkEditor: Saving framework to Firestore:', framework.name);
+      await frameworkOperations.update(framework.id, framework);
+      
+      // Update local state
+      setFrameworks(prev => ({
+        ...prev,
+        [framework.id]: framework
+      }));
+      
+      console.log('✅ Framework saved successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error saving framework:', error);
+      alert('Failed to save framework. Please try again.');
+      return false;
     }
-  });
+  };
 
   // Framework alignment options
   const frameworkOptions = [
@@ -175,7 +147,7 @@ export default function FrameworkEditor() {
     setShowEditQuestion(true);
   };
 
-  const saveEditQuestion = () => {
+  const saveEditQuestion = async () => {
     if (!editingQuestion?.text.trim() || !currentSection) return;
 
     const updatedFramework = { ...currentFramework };
@@ -187,10 +159,9 @@ export default function FrameworkEditor() {
         tags: editingQuestion.tags.filter(tag => tag.trim())
       };
 
-      setFrameworks(prev => ({
-        ...prev,
-        [selectedFramework]: updatedFramework
-      }));
+      // Save to both local state and Firestore
+      const success = await saveFrameworkToFirestore(updatedFramework);
+      if (!success) return; // Don't update UI if save failed
     }
 
     setEditingQuestion(null);
@@ -455,12 +426,12 @@ export default function FrameworkEditor() {
               >
                 {editMode ? (
                   <>
-                    <Save className="w-4 h-4 inline mr-2" />
+                    <Save className="w-4 h-4 inline mr-3" />
                     Save Changes
                   </>
                 ) : (
                   <>
-                    <Edit className="w-4 h-4 inline mr-2" />
+                    <Edit className="w-4 h-4 inline mr-3" />
                     Edit Framework
                   </>
                 )}

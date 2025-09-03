@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Camera, Mic, MapPin, Save, Send, Clock, User, BookOpen } from 'lucide-react';
 import { getFrameworkColorClasses } from '../utils';
 import { frameworkService } from '../services/frameworkService';
+import { getAvailableFrameworks } from '../services/seedFrameworks';
 import { useObservations } from '../hooks/useObservations';
 import { useAuth } from '../hooks/useAuth';
-import { Question as QuestionType, ObservationResponse } from '../types';
+import { Question as QuestionType, ObservationResponse, Framework } from '../types';
 
 interface Teacher {
   id: string;
@@ -59,19 +60,59 @@ const MobileObservationForm: React.FC = () => {
   });
   const [currentSection, setCurrentSection] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
   const [frameworkOptions, setFrameworkOptions] = useState(frameworkService.getFrameworkOptions());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load questions from framework service
+  // Load frameworks and questions
   useEffect(() => {
-    const frameworkQuestions = frameworkService.getObservationQuestions(selectedFramework);
-    setQuestions(frameworkQuestions.map(q => ({
-      id: q.id,
-      text: q.text,
-      type: q.type,
-      scale: q.scale,
-      frameworkAlignments: q.frameworkAlignments
-    })));
+    const loadFrameworksAndQuestions = async () => {
+      try {
+        console.log('🔥 MobileObservationForm: Loading frameworks from Firestore...');
+        // Load frameworks from Firestore (which may have been edited)
+        const availableFrameworks = await getAvailableFrameworks();
+        setFrameworks(availableFrameworks);
+        
+        // Find the selected framework and get its questions
+        const currentFramework = availableFrameworks.find(f => f.id === selectedFramework);
+        if (currentFramework) {
+          console.log('📋 Using framework from Firestore:', currentFramework.name);
+          // Get questions from the framework's sections
+          const frameworkQuestions = currentFramework.sections.flatMap(section => section.questions);
+          setQuestions(frameworkQuestions.map(q => ({
+            id: q.id,
+            text: q.text,
+            type: q.type,
+            scale: q.scale,
+            frameworkAlignments: q.frameworkAlignments
+          })));
+        } else {
+          // Fallback to framework service
+          console.log('⚠️ Framework not found in Firestore, using FrameworkService fallback');
+          const frameworkQuestions = frameworkService.getObservationQuestions(selectedFramework);
+          setQuestions(frameworkQuestions.map(q => ({
+            id: q.id,
+            text: q.text,
+            type: q.type,
+            scale: q.scale,
+            frameworkAlignments: q.frameworkAlignments
+          })));
+        }
+      } catch (error) {
+        console.error('❌ Error loading frameworks, using fallback:', error);
+        // Fallback to framework service
+        const frameworkQuestions = frameworkService.getObservationQuestions(selectedFramework);
+        setQuestions(frameworkQuestions.map(q => ({
+          id: q.id,
+          text: q.text,
+          type: q.type,
+          scale: q.scale,
+          frameworkAlignments: q.frameworkAlignments
+        })));
+      }
+    };
+
+    loadFrameworksAndQuestions();
   }, [selectedFramework]);
 
   // Load observation data from session storage if available
@@ -453,7 +494,7 @@ const MobileObservationForm: React.FC = () => {
             <button
               disabled={!observationData.teacherId || isSubmitting}
               onClick={handleSaveDraft}
-              className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium flex items-center justify-center space-x-2 disabled:opacity-50"
+              className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium flex items-center justify-center space-x-3 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               <span>{isSubmitting ? 'Saving...' : 'Save Draft'}</span>
@@ -461,7 +502,7 @@ const MobileObservationForm: React.FC = () => {
             <button
               disabled={!observationData.teacherId || Object.keys(observationData.responses).length === 0 || isSubmitting}
               onClick={handleSubmit}
-              className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:bg-gray-400"
+              className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-3 disabled:opacity-50 disabled:bg-gray-400"
             >
               <Send className="w-4 h-4" />
               <span>{isSubmitting ? 'Submitting...' : 'Submit'}</span>
