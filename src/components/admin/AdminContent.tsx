@@ -2,7 +2,7 @@ import React from 'react';
 import AdminDashboard from './AdminDashboard';
 
 interface AdminContentProps {
-  defaultTab?: 'overview' | 'users' | 'organizations' | 'applets' | 'system';
+  defaultTab?: 'overview' | 'users' | 'organizations' | 'system';
 }
 
 const AdminContent: React.FC<AdminContentProps> = ({ defaultTab = 'overview' }) => {

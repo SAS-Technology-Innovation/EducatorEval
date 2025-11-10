@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, School, Division, Department, AppletMetadata } from '../types';
+import { User, School, Division, Department } from '../types';
 import { api } from '../../api/api';
 
 const DataModelsTest: React.FC = () => {
@@ -40,16 +40,7 @@ const DataModelsTest: React.FC = () => {
           sampleSchool: schools[0] || null
         };
 
-        // Test 4: Applet System
-        console.log('🔧 Testing Applet Management...');
-        const applets = await api.applets.list();
-        results.appletManagement = {
-          success: true,
-          appletsCount: applets.length,
-          sampleApplet: applets[0] || null
-        };
-
-        // Test 5: Type System Validation
+        // Test 4: Type System Validation
         console.log('📋 Testing Type System...');
         results.typeSystem = {
           success: true,
@@ -198,13 +189,13 @@ const DataModelsTest: React.FC = () => {
             </div>
             
             <div className="bg-indigo-50 rounded-lg p-4">
-              <h4 className="font-semibold text-indigo-900 mb-2">🔧 Applet System</h4>
+              <h4 className="font-semibold text-indigo-900 mb-2">🎯 Professional Learning</h4>
               <ul className="text-sm text-indigo-800 space-y-1">
-                <li>• Modular applet architecture</li>
-                <li>• Role-based access control</li>
-                <li>• Configuration management</li>
-                <li>• Usage analytics</li>
-                <li>• Install/uninstall system</li>
+                <li>• SMART goals tracking</li>
+                <li>• Training suggestions</li>
+                <li>• Progress milestones</li>
+                <li>• Evidence collection</li>
+                <li>• Reflection prompts</li>
               </ul>
             </div>
           </div>
@@ -213,7 +204,7 @@ const DataModelsTest: React.FC = () => {
         {/* API Testing Summary */}
         <div className="mt-8 bg-gradient-to-r from-sas-blue-50 to-sas-green-50 rounded-xl p-6">
           <h3 className="text-xl font-semibold text-sas-gray-900 mb-4">🧪 API Testing Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-sas-blue-600">
                 {testResults.userManagement?.totalUsers || 0}
@@ -225,12 +216,6 @@ const DataModelsTest: React.FC = () => {
                 {testResults.schoolManagement?.schoolsCount || 0}
               </div>
               <div className="text-sm text-sas-gray-600">Schools</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-sas-purple-600">
-                {testResults.appletManagement?.appletsCount || 0}
-              </div>
-              <div className="text-sm text-sas-gray-600">Applets</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-sas-gold-600">

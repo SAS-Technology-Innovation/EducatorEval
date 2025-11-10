@@ -150,13 +150,12 @@ export const observationApi = {
 export const frameworkApi = {
   list: async (): Promise<CRPFramework[]> => {
     const q = query(
-      collection(db, 'crp_frameworks'),
-      where('status', '==', 'active'),
+      collection(db, 'frameworks'),
       orderBy('name')
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
@@ -166,13 +165,13 @@ export const frameworkApi = {
   },
 
   getById: async (id: string): Promise<CRPFramework> => {
-    const docRef = doc(db, 'crp_frameworks', id);
+    const docRef = doc(db, 'frameworks', id);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
-      return { 
-        id: docSnap.id, 
+      return {
+        id: docSnap.id,
         ...data,
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
@@ -185,7 +184,7 @@ export const frameworkApi = {
 
   create: async (framework: Partial<CRPFramework>): Promise<CRPFramework> => {
     const now = new Date();
-    const docRef = await addDoc(collection(db, 'crp_frameworks'), {
+    const docRef = await addDoc(collection(db, 'frameworks'), {
       ...framework,
       createdAt: now,
       updatedAt: now,
@@ -195,9 +194,9 @@ export const frameworkApi = {
       averageCRPEvidence: 0,
       versionHistory: []
     });
-    
-    return { 
-      id: docRef.id, 
+
+    return {
+      id: docRef.id,
       ...framework,
       createdAt: now,
       updatedAt: now,
@@ -210,7 +209,7 @@ export const frameworkApi = {
   },
 
   update: async (id: string, updates: Partial<CRPFramework>): Promise<void> => {
-    const docRef = doc(db, 'crp_frameworks', id);
+    const docRef = doc(db, 'frameworks', id);
     await updateDoc(docRef, {
       ...updates,
       updatedAt: new Date()
@@ -218,7 +217,7 @@ export const frameworkApi = {
   },
 
   delete: async (id: string): Promise<void> => {
-    const docRef = doc(db, 'crp_frameworks', id);
+    const docRef = doc(db, 'frameworks', id);
     await deleteDoc(docRef);
   }
 };

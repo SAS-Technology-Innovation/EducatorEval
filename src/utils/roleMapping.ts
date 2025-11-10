@@ -1,6 +1,6 @@
 // Role Mapping and Utilities for EducatorEval Platform
 
-import { UserRole, JobTitle } from '../types/core';
+import type { UserRole, JobTitle } from '../types';
 
 // Role Hierarchy (higher number = more permissions)
 export const ROLE_HIERARCHY: Record<UserRole, number> = {

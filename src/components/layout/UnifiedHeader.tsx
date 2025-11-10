@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Bell, 
-  Menu, 
-  X, 
+import {
+  Search,
+  Bell,
+  Menu,
+  X,
   Home,
   BarChart3,
   Book,
@@ -12,18 +12,18 @@ import {
   Settings,
   Puzzle,
   ChevronDown,
-  ArrowLeft
+  ArrowLeft,
+  Target,
+  UserCircle
 } from 'lucide-react';
 import UserProfileDropdown from '../common/UserProfileDropdown';
-import { auth } from '../../lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useAuthStore } from '../../stores/auth';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
   href: string;
-  type: 'platform' | 'applet';
   description?: string;
 }
 
@@ -56,7 +56,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       label: 'Home',
       icon: <Home className="w-4 h-4" />,
       href: '/',
-      type: 'platform',
       description: 'Main dashboard and overview'
     },
     {
@@ -64,7 +63,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       label: 'Dashboard',
       icon: <BarChart3 className="w-4 h-4" />,
       href: '/dashboard',
-      type: 'platform',
       description: 'Analytics and insights'
     },
     {
@@ -72,26 +70,44 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       label: 'Observations',
       icon: <Book className="w-4 h-4" />,
       href: '/observations',
-      type: 'platform',
-      description: 'Manage observations and frameworks'
+      description: 'CRP observations and professional learning'
+    },
+    {
+      id: 'professional-learning',
+      label: 'Goals',
+      icon: <Target className="w-4 h-4" />,
+      href: '/professional-learning',
+      description: 'Professional learning and SMART goals'
     },
     {
       id: 'schedule',
       label: 'Schedule',
       icon: <Calendar className="w-4 h-4" />,
       href: '/schedule',
-      type: 'platform',
       description: 'Class schedules and calendar'
+    },
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: <UserCircle className="w-4 h-4" />,
+      href: '/profile',
+      description: 'Your profile and settings'
     }
   ];
 
   const adminItems: NavItem[] = [
     {
+      id: 'admin-dashboard',
+      label: 'Admin Dashboard',
+      icon: <BarChart3 className="w-4 h-4" />,
+      href: '/admin/dashboard',
+      description: 'CRP in Action admin overview'
+    },
+    {
       id: 'admin-users',
       label: 'User Management',
       icon: <Users className="w-4 h-4" />,
       href: '/admin/users',
-      type: 'platform',
       description: 'Manage users and permissions'
     },
     {
@@ -99,50 +115,52 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       label: 'Organizations',
       icon: <Users className="w-4 h-4" />,
       href: '/admin/organizations',
-      type: 'platform',
       description: 'Manage schools and divisions'
     },
     {
-      id: 'admin-applets',
-      label: 'Applet Management',
-      icon: <Puzzle className="w-4 h-4" />,
-      href: '/admin/applets',
-      type: 'platform',
-      description: 'Install and configure applets'
+      id: 'admin-settings',
+      label: 'System Settings',
+      icon: <Settings className="w-4 h-4" />,
+      href: '/admin/settings',
+      description: 'Configure system settings'
     }
   ];
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          setCurrentUser(firebaseUser);
-          setUserProfile({
-            id: firebaseUser.uid,
-            firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
-            lastName: firebaseUser.displayName?.split(' ')[1] || '',
-            email: firebaseUser.email,
-            avatar: firebaseUser.photoURL,
-            primaryRole: 'teacher',
-            divisionNames: [],
-            departmentNames: []
-          });
-        } catch (error) {
-          console.error('Failed to load user profile:', error);
-        }
-      } else {
-        setCurrentUser(null);
-        setUserProfile(null);
-      }
-      setLoading(false);
-    });
+  // Get auth state from store
+  const { user, isAuthenticated, isLoading, initialize } = useAuthStore();
 
+  useEffect(() => {
+    // Initialize auth listener
+    const unsubscribe = initialize();
     return () => unsubscribe();
-  }, []);
+  }, [initialize]);
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+      setUserProfile({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        avatar: user.photoURL,
+        primaryRole: user.primaryRole,
+        divisionNames: [],
+        departmentNames: []
+      });
+    } else {
+      setCurrentUser(null);
+      setUserProfile(null);
+    }
+    setLoading(isLoading);
+  }, [user, isLoading]);
+
+  // Get signOut from auth store
+  const { signOut } = useAuthStore();
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOut();
       handleNavigation('/');
     } catch (error) {
       console.error('Sign out failed:', error);

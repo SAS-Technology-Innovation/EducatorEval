@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../stores/auth';
 import { BookOpen, ArrowRight, Users, Shield, Zap } from 'lucide-react';
 
 const LandingPage: React.FC = () => {

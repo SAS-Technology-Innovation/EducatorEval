@@ -1,50 +1,57 @@
 // Observation & Framework Type Definitions
-import { DivisionType } from './core';
+import type { DivisionType } from './core';
 
-// Generic observation system that works with any framework (CRP, evaluation, etc.)
+// CRP Observation - Primary observation system for Culturally Responsive Pedagogy
 export interface Observation {
   // Core Identification
   id: string;
   schoolId: string;
   divisionId: string;
   departmentId?: string;
-  
+
   // Participants
   subjectId: string; // Teacher or person being observed
   subjectName: string;
   observerId: string;
   observerName: string;
-  
+
   // Context (flexible for different observation types)
   context: ObservationContext;
-  
+
   // Framework & Data
   frameworkId: string;
   frameworkName: string; // Cached for reporting
   frameworkVersion: string;
   responses: ObservationResponse[];
   overallComments: string;
-  
+
   // Analysis (calculated based on framework)
   evidenceCount: number;
   totalQuestions: number;
   evidencePercentage: number;
   frameworkScores: FrameworkScore[];
-  
+
+  // CRP-specific analysis fields
+  crpEvidenceCount: number;
+  totalLookFors: number;
+  crpPercentage: number;
+  strengths: string[];
+  growthAreas: string[];
+
   // Media & Evidence (Firebase Storage URLs)
   attachments: MediaFile[];
   location?: GeoLocation;
-  
+
   // Status & Workflow
   status: 'draft' | 'completed' | 'submitted' | 'reviewed';
   submittedAt?: Date;
   reviewedAt?: Date;
-  
+
   // Follow-up
   followUpRequired: boolean;
   followUpCompleted: boolean;
   followUpNotes?: string;
-  
+
   // System
   createdAt: Date;
   updatedAt: Date;
@@ -237,6 +244,111 @@ export interface GeoLocation {
   longitude: number;
   accuracy?: number;
   timestamp: Date;
+}
+
+// CRP-specific question types
+export interface CRPQuestion {
+  id: string;
+  sectionId: string;
+  questionNumber: string; // "1.1", "2.3", etc.
+  lookFor: string;
+  description: string;
+  examples: string[];
+  crpAlignment: string[];
+  weight: number;
+  isCore: boolean; // Core vs. supplemental questions
+}
+
+// Pre-defined CRP Framework Structure (Culturally Responsive Pedagogy)
+export const CRPFrameworkSections = [
+  {
+    id: 'academic-success',
+    title: 'Academic Success',
+    description: 'Practices that support academic achievement for all students',
+    color: 'blue',
+    weight: 0.25
+  },
+  {
+    id: 'cultural-competence',
+    title: 'Cultural Competence',
+    description: 'Practices that acknowledge and incorporate student cultural references',
+    color: 'green',
+    weight: 0.25
+  },
+  {
+    id: 'critical-consciousness',
+    title: 'Critical Consciousness',
+    description: 'Practices that help students critique social norms and inequities',
+    color: 'purple',
+    weight: 0.25
+  },
+  {
+    id: 'community-connections',
+    title: 'Community Connections',
+    description: 'Practices that connect learning to community contexts and experiences',
+    color: 'orange',
+    weight: 0.25
+  }
+];
+
+// Pre-defined rating scale for CRP observations
+export const CRPRatingScale: RatingScale = {
+  id: 'crp-4-point',
+  name: 'CRP 4-Point Evidence Scale',
+  type: 'descriptive',
+  min: 0,
+  max: 4,
+  includeNotObserved: true,
+  notObservedLabel: 'Not Observed',
+  labels: [
+    {
+      value: 0,
+      label: 'Not Observed',
+      description: 'This practice was not observed during the lesson',
+      color: 'gray'
+    },
+    {
+      value: 1,
+      label: 'Beginning',
+      description: 'Teacher demonstrates limited implementation of this practice',
+      color: 'red'
+    },
+    {
+      value: 2,
+      label: 'Developing',
+      description: 'Teacher demonstrates developing implementation of this practice',
+      color: 'yellow'
+    },
+    {
+      value: 3,
+      label: 'Proficient',
+      description: 'Teacher demonstrates proficient implementation of this practice',
+      color: 'green'
+    },
+    {
+      value: 4,
+      label: 'Advanced',
+      description: 'Teacher demonstrates advanced implementation of this practice',
+      color: 'blue'
+    }
+  ]
+};
+
+// CRP Dashboard Statistics
+export interface CRPStatistics {
+  totalObservations: number;
+  averageCRPScore: number;
+  evidenceRate: number;
+  topStrengths: { practice: string; count: number }[];
+  growthAreas: { practice: string; count: number }[];
+  trendData: { date: string; score: number }[];
+  bySection: {
+    sectionId: string;
+    sectionName: string;
+    averageScore: number;
+    evidenceCount: number;
+    totalQuestions: number;
+  }[];
 }
 
 // CRP Framework Alignments - Now division-aware

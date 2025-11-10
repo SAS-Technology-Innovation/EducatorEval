@@ -144,7 +144,6 @@ export const schoolsService = new FirestoreService('schools');
 export const divisionsService = new FirestoreService('divisions');
 export const departmentsService = new FirestoreService('departments');
 export const observationsService = new FirestoreService('observations');
-export const appletsService = new FirestoreService('applets');
 
 // Specialized query functions
 export const firestoreQueries = {

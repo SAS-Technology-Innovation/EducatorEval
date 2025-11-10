@@ -16,7 +16,7 @@ import {
   RotateCcw,
   Chrome
 } from 'lucide-react';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../stores/auth';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -34,8 +34,8 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  
-  const { signIn, signUp, signInWithGoogle, sendPasswordReset, error, clearError, initialize } = useAuthStore();
+
+  const { signIn, signUp, signInWithGoogle, sendPasswordReset, error, clearError, initialize, isAuthenticated, isLoading } = useAuthStore();
 
   // Initialize auth listener on component mount
   useEffect(() => {
@@ -43,6 +43,14 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
     const unsubscribe = initialize();
     return () => unsubscribe();
   }, [initialize]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      console.log('✅ User already authenticated, redirecting to dashboard...');
+      window.location.href = '/dashboard';
+    }
+  }, [isAuthenticated, isLoading]);
 
   const handleSignIn = async (e: any) => {
     e.preventDefault();

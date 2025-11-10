@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Shield, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../stores/auth';
 import { getRoleDisplayName, getJobTitleDisplayName } from '../../utils/roleMapping';
 
 interface AuthWrapperProps {

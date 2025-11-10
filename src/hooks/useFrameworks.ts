@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { frameworkApi } from '../api';
-import { CRPFramework } from '../types/crp-observation';
-import { useAuthStore } from '../stores/authStore';
+import type { Framework } from '../types';
+import { useAuthStore } from '../stores/auth';
 
 export const useFrameworks = () => {
   const user = useAuthStore(state => state.user);

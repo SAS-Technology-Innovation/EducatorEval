@@ -12,7 +12,7 @@ import {
   orderBy,
   limit as firestoreLimit
 } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../lib/firebase';
 
 async function getAuthToken(): Promise<string | null> {
   const user = auth.currentUser;
@@ -359,61 +359,6 @@ export const coreApi = {
 
     delete: async (id: string) => {
       await deleteDoc(doc(db, 'departments', id));
-      return { success: true };
-    }
-  },
-
-  // Applet management
-  applets: {
-    list: async (filters?: any) => {
-      let q = query(collection(db, 'applets'), orderBy('name'));
-      
-      if (filters?.status) {
-        q = query(q, where('status', '==', filters.status));
-      }
-      if (filters?.type) {
-        q = query(q, where('type', '==', filters.type));
-      }
-      
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    },
-
-    getById: async (id: string) => {
-      const docRef = doc(db, 'applets', id);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
-      }
-      throw new Error('Applet not found');
-    },
-
-    create: async (appletData: any) => {
-      const newApplet = {
-        ...appletData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        usageCount: 0,
-        activeUsers: 0
-      };
-      
-      const docRef = await addDoc(collection(db, 'applets'), newApplet);
-      return await coreApi.applets.getById(docRef.id);
-    },
-
-    update: async (id: string, updates: any) => {
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
-      
-      await updateDoc(doc(db, 'applets', id), updateData);
-      return await coreApi.applets.getById(id);
-    },
-
-    delete: async (id: string) => {
-      await deleteDoc(doc(db, 'applets', id));
       return { success: true };
     }
   },

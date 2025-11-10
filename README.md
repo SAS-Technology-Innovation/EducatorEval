@@ -11,7 +11,6 @@ EducatorEval is a modern web application designed for educational institutions t
 ```text
 EducatorEval/
 ├── docs/                          # Documentation
-├── functions/                     # Firebase Cloud Functions (Go)
 ├── public/                       # Static assets
 ├── src/
 │   ├── components/               # React components
@@ -31,8 +30,7 @@ EducatorEval/
 
 - **Frontend**: Astro 5.13.3, React 18, TypeScript
 - **Styling**: Tailwind CSS
-- **Backend**: Firebase (Firestore, Auth, Functions)
-- **Cloud Functions**: Go 1.21
+- **Backend**: Firebase (Firestore, Auth)
 - **State Management**: Zustand
 - **Build Tool**: Vite
 
@@ -43,7 +41,6 @@ EducatorEval/
 - Node.js (v18+)
 - npm or yarn
 - Firebase CLI
-- Go 1.21+ (for cloud functions)
 
 ### Installation
 

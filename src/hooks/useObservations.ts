@@ -1,15 +1,20 @@
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { observationApi } from '../api';
-import { CRPObservation } from '../types/crp-observation';
-import { useAuthStore } from '../stores/authStore';
+import { observationsApi } from '../api/observations';
+import type { Observation } from '../types';
+import { useAuthStore } from '../stores/auth';
 
-export const useObservations = () => {
+export const useObservations = (schoolId?: string) => {
   const user = useAuthStore(state => state.user);
-  
+
+  // Check if we're in the browser
+  const isBrowser = typeof window !== 'undefined';
+
   return useQuery({
-    queryKey: ['observations', user?.id],
-    queryFn: () => observationApi.list(),
-    enabled: !!user,
+    queryKey: ['observations', schoolId || user?.id],
+    queryFn: () => observationsApi.observations.list({ schoolId }),
+    enabled: isBrowser && !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

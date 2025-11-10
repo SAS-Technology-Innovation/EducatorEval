@@ -17,13 +17,8 @@ const InteractivityTest: React.FC = () => {
     },
     {
       id: 'tab-organizations',
-      name: 'Organizations Tab', 
+      name: 'Organizations Tab',
       description: 'Click Organizations tab to see schools'
-    },
-    {
-      id: 'tab-applets',
-      name: 'Applets Tab',
-      description: 'Click Applets tab to see applet management'
     },
     {
       id: 'tab-system',

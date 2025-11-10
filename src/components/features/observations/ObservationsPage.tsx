@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { useObservations } from '../hooks/useObservations';
-import { useFrameworks } from '../hooks/useFrameworks';
-import { 
+import { useAuthStore } from '../../../stores/auth';
+import { useObservations } from '../../../hooks/useObservations';
+import { useFrameworks } from '../../../hooks/useFrameworks';
+import ObservationForm from './ObservationForm';
+import {
   Plus,
   Search,
   Filter,
@@ -15,17 +16,19 @@ import {
   Download,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 
 const ObservationsPage: React.FC = () => {
   const { user, hasPermission } = useAuthStore();
   const { data: observations, isLoading: observationsLoading } = useObservations();
   const { data: frameworks } = useFrameworks();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedFramework, setSelectedFramework] = useState<string>('all');
+  const [showObservationForm, setShowObservationForm] = useState(false);
 
   // Filter observations based on search and filters
   const filteredObservations = useMemo(() => {
@@ -86,6 +89,25 @@ const ObservationsPage: React.FC = () => {
     }
   };
 
+  const handleSaveDraft = (data: any) => {
+    console.log('Saving draft:', data);
+    // TODO: Implement save draft functionality
+    alert('Draft saved! (Firebase integration pending)');
+  };
+
+  const handleSubmitObservation = (data: any) => {
+    console.log('Submitting observation:', data);
+    // TODO: Implement submit observation functionality
+    alert('Observation submitted! (Firebase integration pending)');
+    setShowObservationForm(false);
+  };
+
+  const handleCancelObservation = () => {
+    if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+      setShowObservationForm(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -109,7 +131,10 @@ const ObservationsPage: React.FC = () => {
             </div>
             <div className="flex items-center space-x-3">
               {hasPermission('observations', 'create') && (
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
+                <button
+                  onClick={() => setShowObservationForm(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   New Observation
                 </button>
@@ -283,7 +308,10 @@ const ObservationsPage: React.FC = () => {
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No observations yet</h3>
                   <p className="text-gray-600 mb-4">Get started by creating your first CRP observation.</p>
                   {hasPermission('observations', 'create') && (
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+                    <button
+                      onClick={() => setShowObservationForm(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
                       Create First Observation
                     </button>
                   )}
@@ -382,6 +410,37 @@ const ObservationsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Observation Form Modal */}
+      {showObservationForm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-start justify-center min-h-screen pt-4 px-4 pb-20">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              onClick={handleCancelObservation}
+            />
+
+            {/* Form Container */}
+            <div className="relative bg-white rounded-lg max-w-4xl w-full z-10">
+              {/* Close Button */}
+              <button
+                onClick={handleCancelObservation}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-20"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Form */}
+              <ObservationForm
+                onSave={handleSaveDraft}
+                onSubmit={handleSubmitObservation}
+                onCancel={handleCancelObservation}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

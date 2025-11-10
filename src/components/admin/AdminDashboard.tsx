@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Settings,
   Users,
   Building2,
-  Puzzle,
   BarChart3,
   Shield,
   Database,
@@ -28,16 +27,15 @@ import {
   XCircle
 } from 'lucide-react';
 
-import { 
-  usersService, 
-  organizationsService, 
-  schoolsService, 
-  divisionsService, 
-  departmentsService, 
-  appletsService,
-  firestoreQueries 
+import {
+  usersService,
+  organizationsService,
+  schoolsService,
+  divisionsService,
+  departmentsService,
+  firestoreQueries
 } from '../../lib/firestore';
-import type { User, Organization, School, Division, Department, AppletMetadata } from '../../types';
+import type { User, Organization, School, Division, Department } from '../../types';
 
 interface AdminStats {
   totalUsers: number;
@@ -49,17 +47,16 @@ interface AdminStats {
 }
 
 interface AdminDashboardProps {
-  defaultTab?: 'overview' | 'users' | 'organizations' | 'applets' | 'system';
+  defaultTab?: 'overview' | 'users' | 'organizations' | 'system';
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview' }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'organizations' | 'applets' | 'system'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'organizations' | 'system'>(defaultTab);
   const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [applets, setApplets] = useState<AppletMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -120,27 +117,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
       endDate: ''
     }
   });
-  
-  // Applet Management State
-  const [showAppletModal, setShowAppletModal] = useState(false);
-  const [editingApplet, setEditingApplet] = useState<AppletMetadata | null>(null);
-  const [appletFormData, setAppletFormData] = useState({
-    name: '',
-    description: '',
-    version: '1.0.0',
-    type: 'utility' as 'utility' | 'observation' | 'evaluation' | 'learning' | 'assessment' | 'analytics',
-    category: '',
-    icon: '🧩',
-    color: '#6366f1',
-    route: '',
-    requiredRoles: [] as string[],
-    requiredPermissions: [] as string[],
-    applicableDivisions: [] as string[],
-    isConfigurable: false,
-    settings: {} as Record<string, any>,
-    maintainer: ''
-  });
-  
+
   // System Settings State
   const [systemSettings, setSystemSettings] = useState({
     platformName: 'EducatorEval Platform',
@@ -176,13 +153,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
       console.log('🆕 Loading dashboard with empty data arrays (background)');
       
       // Load all data in background without blocking UI
-      const [usersData, orgsData, schoolsData, divisionsData, departmentsData, appletsData] = await Promise.all([
+      const [usersData, orgsData, schoolsData, divisionsData, departmentsData] = await Promise.all([
         usersService.list(),
         organizationsService.list(),
         schoolsService.list(),
         divisionsService.list(),
-        departmentsService.list(),
-        appletsService.list()
+        departmentsService.list()
       ]);
 
       setUsers(usersData as User[]);
@@ -190,17 +166,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
       setSchools(schoolsData as School[]);
       setDivisions(divisionsData as Division[]);
       setDepartments(departmentsData as Department[]);
-      setApplets(appletsData as AppletMetadata[]);
 
       // Calculate stats
       const activeUsers = (usersData as User[]).filter(u => u.isActive).length;
       const activeSchools = (schoolsData as School[]).length; // All mock schools are active
-      
+
       setStats({
         totalUsers: usersData.length,
         activeUsers,
         totalSchools: activeSchools,
-        activeLearningPaths: appletsData.length,
+        activeLearningPaths: 0,
         pendingEvaluations: Math.floor(Math.random() * 25) + 5, // Mock pending evaluations
         systemHealth: activeUsers > usersData.length * 0.8 ? 'healthy' : 'warning'
       });
@@ -304,9 +279,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
       case 'district_admin':
         return ['users.read', 'users.write', 'organizations.read', 'organizations.write'];
       case 'principal':
-        return ['users.read', 'users.write', 'organizations.read', 'applets.read', 'applets.write'];
+        return ['users.read', 'users.write', 'organizations.read'];
       case 'teacher':
-        return ['users.read', 'applets.read'];
+        return ['users.read'];
       default:
         return ['users.read'];
     }
@@ -452,103 +427,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
     }
   };
 
-  // Applet Management Functions
-  const handleAddApplet = () => {
-    setEditingApplet(null);
-    setAppletFormData({
-      name: '',
-      description: '',
-      version: '1.0.0',
-      type: 'utility',
-      category: '',
-      icon: '🧩',
-      color: '#6366f1',
-      route: '',
-      requiredRoles: [],
-      requiredPermissions: [],
-      applicableDivisions: [],
-      isConfigurable: false,
-      settings: {},
-      maintainer: ''
-    });
-    setShowAppletModal(true);
-  };
-
-  const handleEditApplet = (applet: AppletMetadata) => {
-    setEditingApplet(applet);
-    setAppletFormData({
-      name: applet.name,
-      description: applet.description,
-      version: applet.version,
-      type: applet.type,
-      category: applet.category,
-      icon: applet.icon,
-      color: applet.color,
-      route: applet.route,
-      requiredRoles: applet.requiredRoles,
-      requiredPermissions: applet.requiredPermissions,
-      applicableDivisions: applet.applicableDivisions,
-      isConfigurable: applet.isConfigurable,
-      settings: applet.settings,
-      maintainer: applet.maintainer
-    });
-    setShowAppletModal(true);
-  };
-
-  const handleSaveApplet = async () => {
-    if (!appletFormData.name.trim() || !appletFormData.description.trim()) {
-      alert('Please fill in all required fields (Name and Description)');
-      return;
-    }
-
-    try {
-      const appletData = {
-        ...appletFormData,
-        status: 'active' as const,
-        installs: editingApplet?.installs || 0,
-        activeUsers: editingApplet?.activeUsers || 0,
-        lastUsed: editingApplet?.lastUsed,
-        createdBy: editingApplet?.createdBy || 'current-admin-id' // Should be actual current user ID
-      };
-
-      if (editingApplet) {
-        await appletsService.update(editingApplet.id, appletData);
-      } else {
-        await appletsService.create(appletData);
-      }
-      
-      setShowAppletModal(false);
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Error saving applet:', error);
-      alert(`Failed to ${editingApplet ? 'update' : 'create'} applet: ${error.message}`);
-    }
-  };
-
-  const handleDeleteApplet = async (appletId: string) => {
-    if (!confirm('Are you sure you want to delete this applet? This action cannot be undone.')) return;
-    
-    try {
-      await appletsService.delete(appletId);
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Error deleting applet:', error);
-      alert('Failed to delete applet');
-    }
-  };
-
-  const handleToggleAppletStatus = async (appletId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    
-    try {
-      await appletsService.update(appletId, { status: newStatus });
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Error updating applet status:', error);
-      alert('Failed to update applet status');
-    }
-  };
-
   // Organization Management Functions
   const handleAddOrg = () => {
     setEditingOrg(null);
@@ -645,7 +523,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
     }
   };
 
-  const handleTabChange = (newTab: 'overview' | 'users' | 'organizations' | 'applets' | 'system') => {
+  const handleTabChange = (newTab: 'overview' | 'users' | 'organizations' | 'system') => {
     setActiveTab(newTab);
     console.log('Tab changed to:', newTab);
   };
@@ -1022,29 +900,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-sas-gray-900">Active Applets</h3>
-                <Calendar className="w-5 h-5 text-sas-gray-500" />
-              </div>
-              <div className="space-y-3">
-                {applets.slice(0, 5).map((applet) => (
-                  <div key={applet.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sas-gray-900">{applet.name}</p>
-                      <p className="text-sm text-sas-gray-600">Users: {applet.activeUsers}</p>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      applet.status === 'active' ? 'bg-green-100 text-green-800' :
-                      applet.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {applet.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Quick Actions */}
@@ -1360,223 +1215,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
     </div>
   );
 
-  const renderApplets = () => (
-    <div className="space-y-6">
-      {/* Applet Management Header */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-sas-gray-900">Applet Management</h2>
-            <p className="text-sm text-sas-gray-600 mt-1">Manage platform applets and extensions</p>
-          </div>
-          <div className="flex space-x-3">
-            <button 
-              onClick={() => {
-                // Refresh applets
-                loadDashboardData();
-              }}
-              className="flex items-center px-3 py-2 text-sm border border-sas-gray-300 text-sas-gray-700 rounded-lg hover:bg-sas-gray-50 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Refresh
-            </button>
-            <button 
-              onClick={handleAddApplet}
-              className="flex items-center px-4 py-2 bg-sas-blue-600 text-white rounded-lg hover:bg-sas-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Applet
-            </button>
-          </div>
-        </div>
-
-        {/* Applets Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Puzzle className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-blue-600">Total Applets</p>
-                <p className="text-2xl font-bold text-blue-900">{applets.length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-green-600">Active</p>
-                <p className="text-2xl font-bold text-green-900">
-                  {applets.filter(a => a.status === 'active').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Clock className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-yellow-600">Development</p>
-                <p className="text-2xl font-bold text-yellow-900">
-                  {applets.filter(a => a.status === 'development').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-purple-600">Active Users</p>
-                <p className="text-2xl font-bold text-purple-900">
-                  {applets.reduce((sum, a) => sum + a.activeUsers, 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Applets List */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        {applets.length === 0 ? (
-          <div className="text-center py-12">
-            <Puzzle className="w-16 h-16 text-sas-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-sas-gray-900 mb-2">No applets installed</h3>
-            <p className="text-sas-gray-500 mb-6 max-w-md mx-auto">
-              Applets extend your platform's functionality with specialized tools for observations, evaluations, and learning management.
-            </p>
-            <button 
-              onClick={handleAddApplet}
-              className="inline-flex items-center px-4 py-2 bg-sas-blue-600 text-white rounded-lg hover:bg-sas-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create First Applet
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-sas-gray-200">
-              <thead className="bg-sas-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">
-                    Applet
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">
-                    Type & Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">
-                    Usage
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-sas-gray-500 uppercase tracking-wider">
-                    Version
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-sas-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-sas-gray-200">
-                {applets.map((applet) => (
-                  <tr key={applet.id} className="hover:bg-sas-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div 
-                          className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg"
-                          style={{ backgroundColor: applet.color }}
-                        >
-                          {applet.icon}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-sas-gray-900">{applet.name}</div>
-                          <div className="text-sm text-sas-gray-500 line-clamp-2">{applet.description}</div>
-                          <div className="text-xs text-sas-gray-400 mt-1">
-                            by {applet.maintainer || 'System'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {applet.type}
-                        </span>
-                        <span className="text-xs text-sas-gray-500 mt-1">{applet.category}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        applet.status === 'active' ? 'bg-green-100 text-green-800' :
-                        applet.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                        applet.status === 'development' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {applet.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-sas-gray-900">
-                      <div className="flex flex-col">
-                        <span>{applet.activeUsers} active users</span>
-                        <span className="text-xs text-sas-gray-500">{applet.installs} installs</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-sas-gray-900">
-                      v{applet.version}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleToggleAppletStatus(applet.id, applet.status)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            applet.status === 'active' 
-                              ? 'text-red-600 hover:bg-red-50' 
-                              : 'text-green-600 hover:bg-green-50'
-                          }`}
-                          title={applet.status === 'active' ? 'Deactivate' : 'Activate'}
-                        >
-                          {applet.status === 'active' ? (
-                            <XCircle className="w-4 h-4" />
-                          ) : (
-                            <CheckCircle className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleEditApplet(applet)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit Applet"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteApplet(applet.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete Applet"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   const renderSystemSettings = () => (
     <div className="space-y-6">
       {/* Platform Settings */}
@@ -1671,7 +1309,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
       {/* System Information */}
       <div className="bg-white rounded-xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-sas-gray-900 mb-6">System Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="text-center p-4 border rounded-lg">
             <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
             <div className="text-sm text-gray-600">Total Users</div>
@@ -1679,10 +1317,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
           <div className="text-center p-4 border rounded-lg">
             <div className="text-2xl font-bold text-green-600">{stats.totalSchools}</div>
             <div className="text-sm text-gray-600">Schools</div>
-          </div>
-          <div className="text-center p-4 border rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">{applets.length}</div>
-            <div className="text-sm text-gray-600">Applets</div>
           </div>
         </div>
       </div>
@@ -1739,8 +1373,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
         return renderUsers();
       case 'organizations':
         return renderOrganizations();
-      case 'applets':
-        return renderApplets();
       case 'system':
         return renderSystemSettings();
       default:
@@ -1780,7 +1412,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
             { id: 'overview', label: 'Overview', icon: BarChart3 },
             { id: 'users', label: 'Users', icon: Users },
             { id: 'organizations', label: 'Organizations', icon: Building2 },
-            { id: 'applets', label: 'Applets', icon: Puzzle },
             { id: 'system', label: 'System', icon: Settings },
           ].map((tab) => (
             <button
@@ -2248,198 +1879,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ defaultTab = 'overview'
                 className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
               >
                 {editingOrg ? 'Save Changes' : 'Create Organization'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Applet Modal */}
-      {showAppletModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              {editingApplet ? 'Edit Applet' : 'Add New Applet'}
-            </h2>
-
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={appletFormData.name}
-                    onChange={(e) => setAppletFormData({...appletFormData, name: e.target.value})}
-                    placeholder="Enter applet name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Version
-                  </label>
-                  <input
-                    type="text"
-                    value={appletFormData.version}
-                    onChange={(e) => setAppletFormData({...appletFormData, version: e.target.value})}
-                    placeholder="1.0.0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description *
-                </label>
-                <textarea
-                  value={appletFormData.description}
-                  onChange={(e) => setAppletFormData({...appletFormData, description: e.target.value})}
-                  rows={3}
-                  placeholder="Describe what this applet does..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Type and Category */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Type
-                  </label>
-                  <select
-                    value={appletFormData.type}
-                    onChange={(e) => setAppletFormData({...appletFormData, type: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="observation">Observation</option>
-                    <option value="evaluation">Evaluation</option>
-                    <option value="learning">Learning</option>
-                    <option value="assessment">Assessment</option>
-                    <option value="analytics">Analytics</option>
-                    <option value="utility">Utility</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <input
-                    type="text"
-                    value={appletFormData.category}
-                    onChange={(e) => setAppletFormData({...appletFormData, category: e.target.value})}
-                    placeholder="e.g., Teaching Tools, Admin Tools"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Visual and Navigation */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Icon (Emoji)
-                  </label>
-                  <input
-                    type="text"
-                    value={appletFormData.icon}
-                    onChange={(e) => setAppletFormData({...appletFormData, icon: e.target.value})}
-                    placeholder="🧩"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    maxLength={2}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Color
-                  </label>
-                  <input
-                    type="color"
-                    value={appletFormData.color}
-                    onChange={(e) => setAppletFormData({...appletFormData, color: e.target.value})}
-                    className="w-full h-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Route Path
-                  </label>
-                  <input
-                    type="text"
-                    value={appletFormData.route}
-                    onChange={(e) => setAppletFormData({...appletFormData, route: e.target.value})}
-                    placeholder="/applets/my-applet"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Permissions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Required Roles (one per line)
-                </label>
-                <textarea
-                  value={appletFormData.requiredRoles.join('\n')}
-                  onChange={(e) => setAppletFormData({
-                    ...appletFormData, 
-                    requiredRoles: e.target.value.split('\n').filter(role => role.trim())
-                  })}
-                  rows={3}
-                  placeholder="teacher&#10;principal&#10;administrator"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Additional Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Maintainer
-                  </label>
-                  <input
-                    type="text"
-                    value={appletFormData.maintainer}
-                    onChange={(e) => setAppletFormData({...appletFormData, maintainer: e.target.value})}
-                    placeholder="Developer/Team Name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isConfigurable"
-                    checked={appletFormData.isConfigurable}
-                    onChange={(e) => setAppletFormData({...appletFormData, isConfigurable: e.target.checked})}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="isConfigurable" className="ml-2 text-sm text-gray-700">
-                    Applet is configurable
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowAppletModal(false)}
-                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveApplet}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                {editingApplet ? 'Save Changes' : 'Create Applet'}
               </button>
             </div>
           </div>

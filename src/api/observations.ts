@@ -1,11 +1,11 @@
 // Observation Applet API Client
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
   deleteDoc,
   query,
   where,
@@ -13,7 +13,7 @@ import {
   limit as firestoreLimit,
   Timestamp
 } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../lib/firebase';
 import { coreApi } from './core';
 
 async function getAuthToken(): Promise<string | null> {

@@ -7,7 +7,6 @@ export const ROUTES = {
   ADMIN: '/admin',
   ADMIN_USERS: '/admin/users',
   ADMIN_ORGANIZATIONS: '/admin/organizations',
-  ADMIN_APPLETS: '/admin/applets',
   SETTINGS: '/settings'
 } as const;
 
@@ -37,7 +36,6 @@ export const PERMISSIONS = {
   OBSERVATIONS_READ: 'observations.read',
   OBSERVATIONS_UPDATE: 'observations.update',
   OBSERVATIONS_DELETE: 'observations.delete',
-  APPLETS_MANAGE: 'applets.manage',
   SYSTEM_ADMIN: 'system.admin'
 } as const;
 
@@ -77,8 +75,7 @@ export const API_ENDPOINTS = {
   SCHOOLS: '/api/schools',
   DIVISIONS: '/api/divisions',
   DEPARTMENTS: '/api/departments',
-  OBSERVATIONS: '/api/observations',
-  APPLETS: '/api/applets'
+  OBSERVATIONS: '/api/observations'
 } as const;
 
 export type Route = typeof ROUTES[keyof typeof ROUTES];
