@@ -3,7 +3,21 @@
     "allow": [
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "WebFetch(domain:www.sas.edu.sg)"
+      "WebFetch(domain:www.sas.edu.sg)",
+      "Bash(pkill:*)",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm update:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase use:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)",
+      "Bash(npm run build:check:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "educator-evaluations",
+    "production": "educator-evaluations",
+    "staging": "educatoreval-staging"
+  },
+  "targets": {},
+  "etags": {}
+}

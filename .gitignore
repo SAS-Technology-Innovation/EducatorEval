@@ -1,3 +1,4 @@
+# Dependencies
 node_modules
 
 # Build outputs
@@ -6,8 +7,52 @@ dist/
 
 # Firebase
 .firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firebase-keys/
+*-firebase-adminsdk-*.json
 
 # Environment variables
 .env
 .env.local
+.env.staging
 .env.production
+
+# IDE and OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+*.backup
+*.bak
+*.old
+
+# Planning and summary documents
+summaries/
+
+# Local configuration
+.claude/settings.local.json
