@@ -1,6 +1,6 @@
 # EducatorEval
 
-A comprehensive educational evaluation platform built with Astro, React, TypeScript, and Firebase.
+A comprehensive educational evaluation platform built with Vite, React 19, TypeScript, and Firebase.
 
 ## 🚀 Project Overview
 
@@ -28,11 +28,13 @@ EducatorEval/
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Astro 5.13.3, React 18, TypeScript
+- **Frontend**: Vite, React 19, TypeScript
 - **Styling**: Tailwind CSS
-- **Backend**: Firebase (Firestore, Auth)
+- **Backend**: Firebase (Firestore, Auth, Storage)
 - **State Management**: Zustand
+- **Data Fetching**: TanStack Query (React Query)
 - **Build Tool**: Vite
+- **Architecture**: Pure React SPA (Single Page Application)
 
 ## 🏗️ Getting Started
 
@@ -71,27 +73,63 @@ npm run dev
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `docs/` directory:
+Comprehensive documentation is available:
 
-- [Project Structure](docs/PROJECT_STRUCTURE.md) - Detailed project organization
-- [Implementation Instructions](docs/IMPLEMENTATION_INSTRUCTIONS.md) - Setup and deployment guide
-- [Firebase Setup](docs/FIREBASE_REVIEW_COMPLETE.md) - Firebase configuration
-- [Development Server](docs/DEV_SERVER_OVERVIEW.md) - Development environment setup
-- [Testing Guide](docs/FUNCTIONALITY_TEST.md) - Testing procedures
+### Quick Start Guides
+- [STAGING_SETUP.md](STAGING_SETUP.md) - Quick reference for staging environment setup
+- [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Complete deployment checklist
+- [CLAUDE.md](CLAUDE.md) - Development guide for working with this codebase
+
+### Detailed Documentation (`docs/` directory)
+- [Framework-Driven Architecture](docs/FRAMEWORK_DRIVEN_ARCHITECTURE.md) - Core architecture overview
+- [Firestore Database Schema](docs/FIRESTORE_DATABASE_SCHEMA.md) - Complete database schema
+- [Database Setup Guide](docs/DATABASE_SETUP_GUIDE.md) - Step-by-step database setup
+- [Staging Environment Setup](docs/STAGING_ENVIRONMENT_SETUP.md) - Detailed staging environment guide
+- [User Fields and Analytics](docs/USER_FIELDS_AND_ANALYTICS.md) - Multi-department/subject support
 
 ## 🔧 Development
 
 The project follows modern development practices:
 
+- **Framework-Driven Architecture**: All forms, observations, and analytics driven by framework definitions
 - **Component Architecture**: Feature-based organization with reusable common components
 - **Type Safety**: Comprehensive TypeScript coverage
-- **State Management**: Centralized with Zustand
+- **State Management**: Zustand for auth, React Query for data fetching
 - **Clean Architecture**: Clear separation between UI, business logic, and data layers
-- **Testing**: Isolated test environment with dedicated test components
+- **Multi-Environment Support**: Development, staging, and production environments
+
+### Development Commands
+
+```bash
+# Local development (mock auth)
+npm run dev
+
+# Build and type check
+npm run build:check
+
+# Preview production build
+npm run preview
+
+# Run tests
+npm run test
+```
 
 ## 🚀 Deployment
 
-The application is configured for Firebase Hosting with automatic builds and deployments.
+The application uses a multi-environment deployment strategy:
+
+### Environments
+- **Local**: Development with mock authentication (`npm run dev`)
+- **Staging**: Pre-production testing environment (`npm run deploy:staging`)
+- **Production**: Live application (`npm run deploy:production`)
+
+### Deployment Workflow
+1. Test locally: `npm run build:check`
+2. Deploy to staging: `npm run deploy:staging`
+3. Test in staging environment
+4. Deploy to production: `npm run deploy:production`
+
+See [STAGING_SETUP.md](STAGING_SETUP.md) and [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for complete deployment instructions.
 
 ## 📄 License
 
