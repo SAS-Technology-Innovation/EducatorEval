@@ -17,7 +17,10 @@
       "Bash(npx vite:*)",
       "Bash(npm run build:check:*)",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(./check-env.sh:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/clean-build-staging.sh:*)"
     ],
     "deny": [],
     "ask": []
