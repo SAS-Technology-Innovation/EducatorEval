@@ -1,26 +1,34 @@
 // Direct Firestore Database Operations
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
   limit,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
 
+// Get environment-based collection prefix
+const getCollectionPrefix = () => {
+  const env = import.meta.env.VITE_ENVIRONMENT || 'staging';
+  return env === 'production' ? '' : 'staging_';
+};
+
 // Generic CRUD operations for Firestore collections
 export class FirestoreService {
+  private baseCollectionName: string;
   private collectionName: string;
 
   constructor(collectionName: string) {
-    this.collectionName = collectionName;
+    this.baseCollectionName = collectionName;
+    this.collectionName = `${getCollectionPrefix()}${collectionName}`;
   }
 
   // List documents with optional query constraints

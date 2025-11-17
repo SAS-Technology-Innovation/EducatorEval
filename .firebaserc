@@ -2,8 +2,19 @@
   "projects": {
     "default": "educator-evaluations",
     "production": "educator-evaluations",
-    "staging": "educatoreval-staging"
+    "staging": "educator-evaluations"
   },
-  "targets": {},
+  "targets": {
+    "educator-evaluations": {
+      "hosting": {
+        "staging": [
+          "educator-evaluations-staging"
+        ],
+        "production": [
+          "educator-evaluations"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
