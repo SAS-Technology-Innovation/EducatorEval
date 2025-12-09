@@ -17,6 +17,8 @@ export {
   divisionsService,
   departmentsService,
   observationsService,
+  schedulesService,
+  frameworksService,
   firestoreQueries
 } from '../firestore';
 
@@ -25,20 +27,8 @@ import {
   usersService as baseUsersService,
   organizationsService as baseOrganizationsService,
   observationsService as baseObservationsService,
-  divisionsService as baseDivisionsService,
-  departmentsService as baseDepartmentsService,
+  schedulesService as baseSchedulesService,
 } from '../firestore';
-
-// Type-safe wrapper for schedules (create new instance)
-import { FirestoreService } from '../firestore';
-
-export const schedulesService = {
-  getAll: () => baseUsersService.list() as Promise<any[]>, // Placeholder - schedules collection TBD
-  getById: (id: string) => Promise.resolve(null),
-  create: (data: any) => Promise.resolve(data),
-  update: (id: string, data: any) => Promise.resolve(),
-  delete: (id: string) => Promise.resolve(),
-};
 
 // Specialized queries for common use cases (typed)
 export const firestoreApi = {
@@ -103,12 +93,23 @@ export const firestoreApi = {
   // Schedules
   schedules: {
     getByEducator: async (educatorId: string): Promise<EducatorSchedule | null> => {
-      // Using the users collection to find educator schedule - adjust as needed
-      return null;
+      const results = await baseSchedulesService.list({
+        where: [['educatorId', '==', educatorId]],
+        limit: 1
+      });
+      return results.length > 0 ? results[0] as EducatorSchedule : null;
     },
 
     getBySchool: async (schoolId: string): Promise<EducatorSchedule[]> => {
-      return [];
+      const results = await baseSchedulesService.list({
+        where: [['schoolId', '==', schoolId]]
+      });
+      return results as EducatorSchedule[];
+    },
+
+    getAll: async (): Promise<EducatorSchedule[]> => {
+      const results = await baseSchedulesService.list();
+      return results as EducatorSchedule[];
     }
   },
 

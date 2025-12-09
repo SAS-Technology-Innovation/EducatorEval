@@ -171,7 +171,7 @@ export function useDeleteOrganization() {
 export function useSchedules() {
   return useQuery({
     queryKey: queryKeys.schedules.all,
-    queryFn: () => schedulesService.getAll(), // Uses placeholder from api/firestore.ts
+    queryFn: () => schedulesService.list(),
   });
 }
 
