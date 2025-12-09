@@ -3,6 +3,10 @@ import DataTable, { Column } from '../common/DataTable';
 import { Plus, Edit, Trash2, Eye, Mail, Shield } from 'lucide-react';
 import type { User } from '../../types';
 
+/**
+ * @deprecated Use UsersManagementConnected instead.
+ * This static version uses mock data. The connected version uses real Firestore data.
+ */
 export default function UsersManagement() {
   // Mock data - will be replaced with real Firebase data
   const [users] = useState<User[]>([

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAuthStore } from '../../../stores/auth';
-import { useObservations } from '../../../hooks/useObservations';
+import { useObservations, useCreateObservation, useDeleteObservation } from '../../../hooks/useObservations';
 import { useFrameworks } from '../../../hooks/useFrameworks';
 import ObservationForm from './ObservationForm';
 import {
@@ -24,6 +24,8 @@ const ObservationsPage: React.FC = () => {
   const { user, hasPermission } = useAuthStore();
   const { data: observations, isLoading: observationsLoading } = useObservations();
   const { data: frameworks } = useFrameworks();
+  const createObservationMutation = useCreateObservation();
+  const deleteObservationMutation = useDeleteObservation();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -89,17 +91,48 @@ const ObservationsPage: React.FC = () => {
     }
   };
 
-  const handleSaveDraft = (data: any) => {
-    console.log('Saving draft:', data);
-    // TODO: Implement save draft functionality
-    alert('Draft saved! (Firebase integration pending)');
+  const handleSaveDraft = async (data: any) => {
+    try {
+      await createObservationMutation.mutateAsync({
+        ...data,
+        status: 'draft',
+        observerId: user?.id,
+        observerName: user?.displayName || `${user?.firstName} ${user?.lastName}`,
+      });
+      alert('Draft saved successfully!');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      alert(`Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
-  const handleSubmitObservation = (data: any) => {
-    console.log('Submitting observation:', data);
-    // TODO: Implement submit observation functionality
-    alert('Observation submitted! (Firebase integration pending)');
-    setShowObservationForm(false);
+  const handleSubmitObservation = async (data: any) => {
+    try {
+      await createObservationMutation.mutateAsync({
+        ...data,
+        status: 'submitted',
+        observerId: user?.id,
+        observerName: user?.displayName || `${user?.firstName} ${user?.lastName}`,
+        submittedAt: new Date().toISOString(),
+      });
+      alert('Observation submitted successfully!');
+      setShowObservationForm(false);
+    } catch (error) {
+      console.error('Error submitting observation:', error);
+      alert(`Failed to submit observation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleDeleteObservation = async (observationId: string) => {
+    if (confirm('Are you sure you want to delete this observation? This action cannot be undone.')) {
+      try {
+        await deleteObservationMutation.mutateAsync({ id: observationId, hardDelete: false });
+        alert('Observation deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting observation:', error);
+        alert(`Failed to delete observation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
   };
 
   const handleCancelObservation = () => {
@@ -398,7 +431,11 @@ const ObservationsPage: React.FC = () => {
                         </button>
                       )}
                       {hasPermission('observations', 'delete') && (
-                        <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                        <button
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          onClick={() => handleDeleteObservation(observation.id)}
+                          disabled={deleteObservationMutation.isPending}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
