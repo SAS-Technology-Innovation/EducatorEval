@@ -1,3 +1,11 @@
+/**
+ * @deprecated This component is not currently used in routing.
+ * The active observation pages are:
+ * - ObservationsPage (for managers/admins - full management)
+ * - TeacherObservationsView (for educators - view only)
+ * - ObserverObservationsView (for observers - their observations)
+ * See app/app/ObservationsPageRoleRouter.tsx for routing logic.
+ */
 import React, { useState, useMemo, useEffect } from 'react';
 import { observationsService } from '../../../lib/firestore';
 import { 
