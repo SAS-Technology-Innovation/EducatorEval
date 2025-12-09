@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import DataTable, { Column } from '../common/DataTable';
 import { Plus, Edit, Trash2, Eye, Loader2, AlertCircle } from 'lucide-react';
 import type { User } from '../../types';
-import { useUsers, useDeleteUser } from '../../hooks/useFirestore';
+import { useUsers, useDeleteUser, useCreateUser, useUpdateUser } from '../../hooks/useFirestore';
+import UserForm from './UserForm';
 
 export default function UsersManagementConnected() {
   // Fetch users from Firestore
   const { data: users = [], isLoading, error } = useUsers();
   const deleteUserMutation = useDeleteUser();
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
 
-  const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const getRoleBadgeColor = (role: string) => {
     const colors: Record<string, string> = {
@@ -88,13 +93,12 @@ export default function UsersManagementConnected() {
 
   const handleView = (user: User) => {
     setSelectedUser(user);
-    setShowModal(true);
+    setShowViewModal(true);
   };
 
   const handleEdit = (user: User) => {
-    // TODO: Open edit modal
-    console.log('Edit user:', user);
-    alert(`Edit functionality coming soon for ${user.displayName}`);
+    setEditingUser(user);
+    setShowFormModal(true);
   };
 
   const handleDelete = async (user: User) => {
@@ -110,8 +114,41 @@ export default function UsersManagementConnected() {
   };
 
   const handleAddUser = () => {
-    // TODO: Open add user modal
-    alert('Add user functionality coming soon! This will open a modal to create a new user in Firestore.');
+    setEditingUser(null);
+    setShowFormModal(true);
+  };
+
+  const handleFormClose = () => {
+    setShowFormModal(false);
+    setEditingUser(null);
+  };
+
+  const handleFormSave = async (userData: any) => {
+    try {
+      if (editingUser) {
+        // Update existing user
+        await updateUserMutation.mutateAsync({
+          id: editingUser.id,
+          data: {
+            ...userData,
+            displayName: `${userData.firstName} ${userData.lastName}`,
+            isActive: true,
+          }
+        });
+      } else {
+        // Create new user
+        await createUserMutation.mutateAsync({
+          ...userData,
+          displayName: `${userData.firstName} ${userData.lastName}`,
+          isActive: true,
+          status: 'active',
+        } as any);
+      }
+      handleFormClose();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      alert(`Failed to save user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Loading state
@@ -248,8 +285,17 @@ export default function UsersManagementConnected() {
         />
       )}
 
+      {/* User Form Modal */}
+      <UserForm
+        user={editingUser}
+        isOpen={showFormModal}
+        onClose={handleFormClose}
+        onSave={handleFormSave}
+        loading={createUserMutation.isPending || updateUserMutation.isPending}
+      />
+
       {/* View User Modal */}
-      {showModal && selectedUser && (
+      {showViewModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
@@ -301,7 +347,7 @@ export default function UsersManagementConnected() {
             </div>
             <div className="p-6 border-t border-gray-200 flex justify-end">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => setShowViewModal(false)}
                 className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
               >
                 Close
