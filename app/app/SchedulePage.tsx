@@ -1,6 +1,5 @@
-import React from 'react';
-import SchedulePage from '../components/features/schedule/SchedulePage';
+import SchedulePageComponent from '../components/features/schedule/SchedulePage';
 
-export default function Schedule() {
-  return <SchedulePage />;
+export default function SchedulePage() {
+  return <SchedulePageComponent />;
 }

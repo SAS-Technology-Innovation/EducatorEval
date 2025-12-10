@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Camera, Mic, MapPin, Save, Send, Clock, BookOpen } from 'lucide-react';
+import { Camera, Mic, MapPin, Save, Send, Clock, BookOpen, Loader2 } from 'lucide-react';
+import { useTeachers } from '../../../hooks/useFirestore';
 
 interface ObservationFormData {
   teacher: string;
@@ -24,9 +25,10 @@ interface ObservationFormProps {
   onSave?: (data: ObservationFormData) => void;
   onSubmit?: (data: ObservationFormData) => void;
   onCancel?: () => void;
+  isSaving?: boolean;
 }
 
-export default function ObservationForm({ onSave, onSubmit, onCancel }: ObservationFormProps) {
+export default function ObservationForm({ onSave, onSubmit, onCancel, isSaving }: ObservationFormProps) {
   const [observationData, setObservationData] = useState({
     teacher: '',
     teacherId: '',
@@ -42,6 +44,9 @@ export default function ObservationForm({ onSave, onSubmit, onCancel }: Observat
     overallComment: ''
   });
 
+  // Fetch teachers from Firestore
+  const { data: teachersData = [], isLoading: isLoadingTeachers } = useTeachers();
+
   // Live time display
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -50,29 +55,19 @@ export default function ObservationForm({ onSave, onSubmit, onCancel }: Observat
     return () => clearInterval(timer);
   }, []);
 
-  // Sample teacher schedule data (will be replaced with real API)
-  const teachers = [
-    {
-      id: 'teacher1',
-      name: 'Sarah Johnson',
-      currentClass: { name: 'Algebra I - Period 3', subject: 'Mathematics', room: 'B205', period: 'Period 3', grade: '9th Grade' }
-    },
-    {
-      id: 'teacher2',
-      name: 'Michael Brown',
-      currentClass: { name: 'Biology - Period 2', subject: 'Science', room: 'A108', period: 'Period 2', grade: '10th Grade' }
-    },
-    {
-      id: 'teacher3',
-      name: 'Emily Wilson',
-      currentClass: { name: 'English Literature - Period 1', subject: 'English', room: 'C301', period: 'Period 1', grade: '11th Grade' }
-    },
-    {
-      id: 'teacher4',
-      name: 'David Chen',
-      currentClass: { name: 'World History - Period 4', subject: 'Social Studies', room: 'B112', period: 'Period 4', grade: '9th Grade' }
+  // Transform teacher data for the dropdown
+  // Teachers come from the database - we'll show their name and department info
+  const teachers = teachersData.map(teacher => ({
+    id: teacher.id,
+    name: `${teacher.firstName} ${teacher.lastName}`,
+    currentClass: {
+      name: teacher.primaryDepartmentId ? `${teacher.primaryDepartmentId} Class` : 'General Class',
+      subject: teacher.primaryDepartmentId || 'General',
+      room: 'TBD',
+      period: 'Current',
+      grade: teacher.divisionId || 'All Grades'
     }
-  ];
+  }));
 
   // Framework alignment options
   const frameworkOptions = [
@@ -226,32 +221,43 @@ export default function ObservationForm({ onSave, onSubmit, onCancel }: Observat
         <div className="grid grid-cols-1 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Teacher</label>
-            <select
-              value={observationData.teacherId}
-              onChange={(e) => {
-                const selectedTeacher = teachers.find(t => t.id === e.target.value);
-                if (selectedTeacher) {
-                  setObservationData(prev => ({
-                    ...prev,
-                    teacherId: selectedTeacher.id,
-                    teacher: selectedTeacher.name,
-                    subject: selectedTeacher.currentClass?.subject || '',
-                    className: selectedTeacher.currentClass?.name || '',
-                    room: selectedTeacher.currentClass?.room || '',
-                    period: selectedTeacher.currentClass?.period || '',
-                    grade: selectedTeacher.currentClass?.grade || ''
-                  }));
-                }
-              }}
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1"
-            >
-              <option value="">Select teacher...</option>
-              {teachers.map(teacher => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name} - {teacher.currentClass?.name} ({teacher.currentClass?.period})
-                </option>
-              ))}
-            </select>
+            {isLoadingTeachers ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading teachers...</span>
+              </div>
+            ) : (
+              <select
+                value={observationData.teacherId}
+                onChange={(e) => {
+                  const selectedTeacher = teachers.find(t => t.id === e.target.value);
+                  if (selectedTeacher) {
+                    setObservationData(prev => ({
+                      ...prev,
+                      teacherId: selectedTeacher.id,
+                      teacher: selectedTeacher.name,
+                      subject: selectedTeacher.currentClass?.subject || '',
+                      className: selectedTeacher.currentClass?.name || '',
+                      room: selectedTeacher.currentClass?.room || '',
+                      period: selectedTeacher.currentClass?.period || '',
+                      grade: selectedTeacher.currentClass?.grade || ''
+                    }));
+                  }
+                }}
+                className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="">Select teacher...</option>
+                {teachers.length === 0 ? (
+                  <option value="" disabled>No teachers found</option>
+                ) : (
+                  teachers.map(teacher => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.name} - {teacher.currentClass?.name} ({teacher.currentClass?.period})
+                    </option>
+                  ))
+                )}
+              </select>
+            )}
           </div>
 
           {observationData.teacherId && (
@@ -461,26 +467,35 @@ export default function ObservationForm({ onSave, onSubmit, onCancel }: Observat
             {onCancel && (
               <button
                 onClick={onCancel}
-                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium"
+                disabled={isSaving}
+                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium disabled:opacity-50"
               >
                 Cancel
               </button>
             )}
             <button
               onClick={handleSave}
-              disabled={!observationData.teacherId}
+              disabled={!observationData.teacherId || isSaving}
               className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium flex items-center justify-center space-x-2 disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>Save Draft</span>
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!observationData.teacherId || Object.keys(observationData.responses).length === 0}
+              disabled={!observationData.teacherId || Object.keys(observationData.responses).length === 0 || isSaving}
               className="flex-1 bg-sas-blue-500 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:bg-gray-400"
             >
-              <Send className="w-4 h-4" />
-              <span>Submit</span>
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              <span>{isSaving ? 'Submitting...' : 'Submit'}</span>
             </button>
           </div>
         </div>

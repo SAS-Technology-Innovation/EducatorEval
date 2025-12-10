@@ -1,16 +1,58 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import DataTable, { Column } from '../common/DataTable';
-import { Plus, Edit, Trash2, Eye, Building2, MapPin, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Building2, MapPin, Loader2, AlertCircle, X, Save } from 'lucide-react';
 import type { Organization } from '../../types';
-import { useOrganizations, useDeleteOrganization } from '../../hooks/useFirestore';
+import { useOrganizations, useDeleteOrganization, useCreateOrganization, useUpdateOrganization } from '../../hooks/useFirestore';
+
+// Form data for creating/editing organizations
+interface OrganizationFormData {
+  name: string;
+  type: 'district' | 'school' | 'charter' | 'private';
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  contactInfo: {
+    email: string;
+    phone: string;
+    website: string;
+  };
+  timezone: string;
+}
+
+const defaultFormData: OrganizationFormData = {
+  name: '',
+  type: 'school',
+  address: {
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'Singapore',
+  },
+  contactInfo: {
+    email: '',
+    phone: '',
+    website: '',
+  },
+  timezone: 'Asia/Singapore',
+};
 
 export default function OrganizationsManagementConnected() {
   // Fetch organizations from Firestore
   const { data: organizations = [], isLoading, error } = useOrganizations();
   const deleteOrgMutation = useDeleteOrganization();
+  const createOrgMutation = useCreateOrganization();
+  const updateOrgMutation = useUpdateOrganization();
 
-  const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [formData, setFormData] = useState<OrganizationFormData>(defaultFormData);
+  const [isEditing, setIsEditing] = useState(false);
 
   const columns: Column<Organization>[] = [
     {
@@ -65,28 +107,83 @@ export default function OrganizationsManagementConnected() {
 
   const handleView = (org: Organization) => {
     setSelectedOrg(org);
-    setShowModal(true);
+    setShowViewModal(true);
   };
 
   const handleEdit = (org: Organization) => {
-    alert(`Edit functionality coming soon for ${org.name}`);
-    console.log('Edit organization:', org);
+    setSelectedOrg(org);
+    setFormData({
+      name: org.name || '',
+      type: org.type || 'school',
+      address: {
+        street: org.address?.street || '',
+        city: org.address?.city || '',
+        state: org.address?.state || '',
+        zipCode: org.address?.zipCode || '',
+        country: org.address?.country || 'Singapore',
+      },
+      contactInfo: {
+        email: org.contactInfo?.email || '',
+        phone: org.contactInfo?.phone || '',
+        website: org.contactInfo?.website || '',
+      },
+      timezone: org.timezone || 'Asia/Singapore',
+    });
+    setIsEditing(true);
+    setShowEditModal(true);
   };
 
   const handleDelete = async (org: Organization) => {
-    if (confirm(`Are you sure you want to delete ${org.name}? This action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete ${org.name}? This action cannot be undone.`)) {
       try {
         await deleteOrgMutation.mutateAsync(org.id);
-        alert(`Successfully deleted ${org.name}`);
       } catch (error) {
         console.error('Error deleting organization:', error);
-        alert(`Failed to delete organization: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
   };
 
   const handleAddOrganization = () => {
-    alert('Add organization functionality coming soon! This will open a modal to create a new organization in Firestore.');
+    setSelectedOrg(null);
+    setFormData(defaultFormData);
+    setIsEditing(false);
+    setShowEditModal(true);
+  };
+
+  const handleSaveOrganization = async () => {
+    try {
+      if (isEditing && selectedOrg) {
+        await updateOrgMutation.mutateAsync({
+          id: selectedOrg.id,
+          data: formData as Partial<Organization>,
+        });
+      } else {
+        await createOrgMutation.mutateAsync(formData as Omit<Organization, 'id' | 'createdAt' | 'updatedAt'>);
+      }
+      setShowEditModal(false);
+      setFormData(defaultFormData);
+      setSelectedOrg(null);
+    } catch (error) {
+      console.error('Error saving organization:', error);
+    }
+  };
+
+  const handleFormChange = (field: string, value: string) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...(prev[parent as keyof OrganizationFormData] as Record<string, string>),
+          [child]: value,
+        },
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
   };
 
   // Loading state
@@ -222,11 +319,14 @@ export default function OrganizationsManagementConnected() {
       )}
 
       {/* View Organization Modal */}
-      {showModal && selectedOrg && (
+      {showViewModal && selectedOrg && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">Organization Details</h2>
+              <button onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -268,12 +368,192 @@ export default function OrganizationsManagementConnected() {
                 <p className="mt-1 text-gray-900">{selectedOrg.timezone || 'Not set'}</p>
               </div>
             </div>
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowViewModal(false);
+                  handleEdit(selectedOrg);
+                }}
+                className="px-6 py-2 bg-sas-navy-600 text-white rounded-lg font-medium hover:bg-sas-navy-700"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setShowViewModal(false)}
                 className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit/Create Organization Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">
+                {isEditing ? 'Edit Organization' : 'Add Organization'}
+              </h2>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleFormChange('name', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                  placeholder="e.g., Singapore American School"
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => handleFormChange('type', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                >
+                  <option value="school">School</option>
+                  <option value="district">District</option>
+                  <option value="charter">Charter</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+
+              {/* Address */}
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Address</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Street</label>
+                    <input
+                      type="text"
+                      value={formData.address.street}
+                      onChange={(e) => handleFormChange('address.street', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">City</label>
+                      <input
+                        type="text"
+                        value={formData.address.city}
+                        onChange={(e) => handleFormChange('address.city', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">State/Province</label>
+                      <input
+                        type="text"
+                        value={formData.address.state}
+                        onChange={(e) => handleFormChange('address.state', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Postal Code</label>
+                      <input
+                        type="text"
+                        value={formData.address.zipCode}
+                        onChange={(e) => handleFormChange('address.zipCode', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Country</label>
+                      <input
+                        type="text"
+                        value={formData.address.country}
+                        onChange={(e) => handleFormChange('address.country', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Contact Information</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={formData.contactInfo.email}
+                      onChange={(e) => handleFormChange('contactInfo.email', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.contactInfo.phone}
+                      onChange={(e) => handleFormChange('contactInfo.phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Website</label>
+                    <input
+                      type="url"
+                      value={formData.contactInfo.website}
+                      onChange={(e) => handleFormChange('contactInfo.website', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                      placeholder="https://"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Timezone */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                <select
+                  value={formData.timezone}
+                  onChange={(e) => handleFormChange('timezone', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sas-navy-500 focus:border-transparent"
+                >
+                  <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                  <option value="America/New_York">America/New_York (EST)</option>
+                  <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
+                  <option value="Europe/London">Europe/London (GMT)</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveOrganization}
+                disabled={!formData.name || createOrgMutation.isPending || updateOrgMutation.isPending}
+                className="px-6 py-2 bg-sas-navy-600 text-white rounded-lg font-medium hover:bg-sas-navy-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {(createOrgMutation.isPending || updateOrgMutation.isPending) ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {isEditing ? 'Save Changes' : 'Create Organization'}
               </button>
             </div>
           </div>
