@@ -4,6 +4,22 @@ import { Eye, Calendar, CheckCircle, Clock, AlertCircle, Users, BarChart3, FileT
 import { useAuthStore } from '../../stores/auth';
 import ObservationForm from '../features/observations/ObservationForm';
 
+// Observation form data type (matches ObservationForm component)
+interface ObservationFormData {
+  teacher: string;
+  teacherId: string;
+  subject: string;
+  className: string;
+  room: string;
+  period: string;
+  grade: string;
+  duration: number;
+  startTime: string;
+  responses: Record<string, string>;
+  comments: Record<string, string>;
+  overallComment: string;
+}
+
 /**
  * Observer-focused dashboard
  *
@@ -16,21 +32,32 @@ import ObservationForm from '../features/observations/ObservationForm';
 export default function ObserverDashboard() {
   const user = useAuthStore(state => state.user);
   const [showObservationForm, setShowObservationForm] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
 
-  const handleSaveDraft = (data: any) => {
-    console.log('Saving draft:', data);
-    alert('Draft saved! (Firebase integration pending)');
+  const showNotification = (message: string, type: 'success' | 'info' = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleSaveDraft = (data: ObservationFormData) => {
+    if (import.meta.env.DEV) {
+      console.log('Saving draft:', data);
+    }
+    showNotification('Draft saved! (Firebase integration pending)', 'success');
     setShowObservationForm(false);
   };
 
-  const handleSubmitObservation = (data: any) => {
-    console.log('Submitting observation:', data);
-    alert('Observation submitted! (Firebase integration pending)');
+  const handleSubmitObservation = (data: ObservationFormData) => {
+    if (import.meta.env.DEV) {
+      console.log('Submitting observation:', data);
+    }
+    showNotification('Observation submitted! (Firebase integration pending)', 'success');
     setShowObservationForm(false);
   };
 
   const handleCancelObservation = () => {
-    if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+    // Note: window.confirm is acceptable for destructive action confirmation
+    if (window.confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
       setShowObservationForm(false);
     }
   };
@@ -39,6 +66,15 @@ export default function ObserverDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all ${
+          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+
       {/* Welcome Header with Quick Action */}
       <div className="bg-gradient-to-r from-sas-purple-600 to-sas-blue-600 rounded-lg shadow-lg p-6 text-white">
         <div className="flex items-center justify-between">

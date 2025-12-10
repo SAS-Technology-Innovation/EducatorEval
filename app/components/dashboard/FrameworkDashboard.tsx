@@ -24,7 +24,7 @@ import {
 import { useAuthStore } from '../../stores/auth';
 import { useObservations } from '../../hooks/useObservations';
 
-export default function CRPLandingDashboard() {
+export default function FrameworkDashboard() {
   const user = useAuthStore(state => state.user);
   const { data: observations = [], isLoading, error } = useObservations(user?.schoolId);
 

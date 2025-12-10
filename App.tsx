@@ -1,8 +1,6 @@
-import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AppProviders from './app/components/providers/AppProviders';
 import AppLayout from './app/components/layout/AppLayout';
-import CRPLandingDashboard from './app/components/dashboard/CRPLandingDashboard';
 import EnvironmentBanner from './app/components/common/EnvironmentBanner';
 import { useAuthStore } from './app/stores/auth';
 

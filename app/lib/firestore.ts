@@ -13,7 +13,7 @@ import {
   limit,
   Timestamp,
   WhereFilterOp,
-  DocumentData
+  QueryConstraint
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -28,11 +28,9 @@ const getCollectionPrefix = () => {
 
 // Generic CRUD operations for Firestore collections
 export class FirestoreService {
-  private baseCollectionName: string;
   private collectionName: string;
 
   constructor(collectionName: string) {
-    this.baseCollectionName = collectionName;
     this.collectionName = `${getCollectionPrefix()}${collectionName}`;
   }
 
@@ -43,21 +41,29 @@ export class FirestoreService {
     limit?: number;
   }) {
     try {
-      let q = collection(db, this.collectionName);
-      
+      const collectionRef = collection(db, this.collectionName);
+
+      // Build all query constraints
+      const constraints: QueryConstraint[] = [];
+
       if (options?.where) {
-        options.where.forEach(([field, operator, value]) => {
-          q = query(q, where(field, operator, value));
-        });
+        for (const [field, operator, value] of options.where) {
+          constraints.push(where(field, operator, value));
+        }
       }
-      
+
       if (options?.orderBy) {
-        q = query(q, orderBy(options.orderBy[0], options.orderBy[1]));
+        constraints.push(orderBy(options.orderBy[0], options.orderBy[1]));
       }
-      
+
       if (options?.limit) {
-        q = query(q, limit(options.limit));
+        constraints.push(limit(options.limit));
       }
+
+      // Create query with all constraints at once
+      const q = constraints.length > 0
+        ? query(collectionRef, ...constraints)
+        : collectionRef;
 
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({
@@ -68,7 +74,9 @@ export class FirestoreService {
         updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
       }));
     } catch (error) {
-      console.error(`Failed to list ${this.collectionName}:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to list ${this.collectionName}:`, error);
+      }
       throw error;
     }
   }
@@ -78,7 +86,7 @@ export class FirestoreService {
     try {
       const docRef = doc(db, this.collectionName, id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         const data = docSnap.data();
         return {
@@ -90,7 +98,9 @@ export class FirestoreService {
       }
       return null;
     } catch (error) {
-      console.error(`Failed to get ${this.collectionName} by ID:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to get ${this.collectionName} by ID:`, error);
+      }
       throw error;
     }
   }
@@ -104,7 +114,7 @@ export class FirestoreService {
         createdAt: now,
         updatedAt: now,
       };
-      
+
       const docRef = await addDoc(collection(db, this.collectionName), docData);
       return {
         id: docRef.id,
@@ -113,7 +123,9 @@ export class FirestoreService {
         updatedAt: docData.updatedAt.toDate().toISOString(),
       };
     } catch (error) {
-      console.error(`Failed to create ${this.collectionName}:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to create ${this.collectionName}:`, error);
+      }
       throw error;
     }
   }
@@ -126,13 +138,15 @@ export class FirestoreService {
         ...data,
         updatedAt: Timestamp.now(),
       };
-      
+
       await updateDoc(docRef, updateData);
-      
+
       // Return updated document
       return this.getById(id);
     } catch (error) {
-      console.error(`Failed to update ${this.collectionName}:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to update ${this.collectionName}:`, error);
+      }
       throw error;
     }
   }
@@ -144,7 +158,9 @@ export class FirestoreService {
       await deleteDoc(docRef);
       return { success: true, id };
     } catch (error) {
-      console.error(`Failed to delete ${this.collectionName}:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to delete ${this.collectionName}:`, error);
+      }
       throw error;
     }
   }
