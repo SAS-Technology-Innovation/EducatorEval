@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, User } from 'lucide-react';
 import TagSelector from '../common/TagSelector';
 import { coreApi } from '../../api';
+import type { User as UserType } from '../../types';
 
 interface Tag {
   id: string;
@@ -9,11 +10,37 @@ interface Tag {
   color: string;
 }
 
+interface Division {
+  id: string;
+  name: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface UserFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  employeeId: string;
+  primaryRole: string;
+  secondaryRoles: string[];
+  title: string;
+  phoneNumber: string;
+  languages: string[];
+  subjects: string[];
+  grades: string[];
+  divisionIds: string[];
+  departmentIds: string[];
+}
+
 interface UserFormProps {
-  user?: any;
+  user?: Partial<UserType>;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (userData: any) => void;
+  onSave: (userData: UserFormData) => void;
   loading?: boolean;
 }
 
@@ -40,8 +67,8 @@ const UserForm: React.FC<UserFormProps> = ({
     departmentIds: []
   });
 
-  const [divisions, setDivisions] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [availableDivisionTags, setAvailableDivisionTags] = useState<Tag[]>([]);
   const [availableDepartmentTags, setAvailableDepartmentTags] = useState<Tag[]>([]);
   const [selectedDivisionTags, setSelectedDivisionTags] = useState<Tag[]>([]);
@@ -170,7 +197,7 @@ const UserForm: React.FC<UserFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: keyof UserFormData, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

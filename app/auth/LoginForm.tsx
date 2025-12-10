@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { 
   LogIn, 
@@ -52,7 +51,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
     }
   }, [isAuthenticated, isLoading]);
 
-  const handleSignIn = async (e: any) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     
@@ -81,7 +80,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
     }
   };
 
-  const handleSignUp = async (e: any) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
@@ -110,7 +109,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
     }
   };
 
-  const handlePasswordReset = async (e: any) => {
+  const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !email) return;
 
