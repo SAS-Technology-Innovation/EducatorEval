@@ -29,7 +29,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-query-devtools": "^5.0.0",
-    "firebase": "^10.14.1",
+    "firebase": "^12.6.0",
     "lucide-react": "^0.400.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
