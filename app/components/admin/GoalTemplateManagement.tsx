@@ -8,7 +8,6 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Settings,
   CheckCircle,
   Loader2,
   AlertCircle,
