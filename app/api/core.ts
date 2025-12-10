@@ -14,7 +14,8 @@ import {
   orderBy,
   limit as firestoreLimit,
   Timestamp,
-  writeBatch
+  writeBatch,
+  QueryConstraint
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { User, UserRole, Organization, School, Division, Department, EducatorSchedule, ClassAssignment } from '../types';
@@ -60,7 +61,7 @@ export const coreApi = {
   // User management - Direct Firestore operations
   users: {
     list: async (filters?: UserFilters): Promise<User[]> => {
-      const constraints = [];
+      const constraints: QueryConstraint[] = [];
 
       if (filters?.schoolId) {
         constraints.push(where('schoolId', '==', filters.schoolId));
@@ -180,7 +181,7 @@ export const coreApi = {
     },
 
     getTeachers: async (filters?: { schoolId?: string; divisionId?: string; isActive?: boolean }): Promise<User[]> => {
-      const constraints = [
+      const constraints: QueryConstraint[] = [
         where('primaryRole', 'in', ['educator', 'observer']),
       ];
 
@@ -232,7 +233,7 @@ export const coreApi = {
   // Organization management
   organizations: {
     list: async (filters?: { type?: string }): Promise<Organization[]> => {
-      const constraints = [orderBy('name')];
+      const constraints: QueryConstraint[] = [orderBy('name')];
 
       if (filters?.type) {
         constraints.unshift(where('type', '==', filters.type));
@@ -295,7 +296,7 @@ export const coreApi = {
   // School management
   schools: {
     list: async (filters?: { organizationId?: string; type?: string }): Promise<School[]> => {
-      const constraints = [orderBy('name')];
+      const constraints: QueryConstraint[] = [orderBy('name')];
 
       if (filters?.organizationId) {
         constraints.unshift(where('organizationId', '==', filters.organizationId));
@@ -361,7 +362,7 @@ export const coreApi = {
   // Division management
   divisions: {
     list: async (filters?: { schoolId?: string; type?: string }): Promise<Division[]> => {
-      const constraints = [orderBy('name')];
+      const constraints: QueryConstraint[] = [orderBy('name')];
 
       if (filters?.schoolId) {
         constraints.unshift(where('schoolId', '==', filters.schoolId));
@@ -427,7 +428,7 @@ export const coreApi = {
   // Department management
   departments: {
     list: async (filters?: { schoolId?: string; divisionId?: string }): Promise<Department[]> => {
-      const constraints = [orderBy('name')];
+      const constraints: QueryConstraint[] = [orderBy('name')];
 
       if (filters?.schoolId) {
         constraints.unshift(where('schoolId', '==', filters.schoolId));
@@ -494,7 +495,7 @@ export const coreApi = {
   schedules: {
     // Get educator's schedule
     getByEducatorId: async (educatorId: string, filters?: { academicYear?: string; isActive?: boolean }): Promise<EducatorSchedule | null> => {
-      const constraints = [where('educatorId', '==', educatorId)];
+      const constraints: QueryConstraint[] = [where('educatorId', '==', educatorId)];
 
       if (filters?.academicYear) {
         constraints.push(where('academicYear', '==', filters.academicYear));
@@ -581,7 +582,7 @@ export const coreApi = {
 
     // List all schedules with filters
     list: async (filters?: ScheduleFilters): Promise<EducatorSchedule[]> => {
-      const constraints = [];
+      const constraints: QueryConstraint[] = [];
 
       if (filters?.schoolId) {
         constraints.push(where('schoolId', '==', filters.schoolId));

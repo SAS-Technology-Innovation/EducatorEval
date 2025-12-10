@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Bell,
@@ -34,14 +35,15 @@ interface UnifiedHeaderProps {
   breadcrumbItems?: Array<{ label: string; href?: string }>;
 }
 
-const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({ 
-  currentPath = '/', 
+const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
+  currentPath = '/',
   onNavigate,
   showBreadcrumb = false,
   breadcrumbItems = []
 }) => {
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const navigateRouter = useNavigate();
+  const [currentUser, setCurrentUser] = useState<unknown>(null);
+  const [userProfile, setUserProfile] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [notificationCount, setNotificationCount] = useState(3);
@@ -163,7 +165,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       await signOut();
       handleNavigation('/');
     } catch (error) {
-      console.error('Sign out failed:', error);
+      if (import.meta.env.DEV) {
+        console.error('Sign out failed:', error);
+      }
     }
   };
 
@@ -177,12 +181,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleNavigation = (href: string) => {
-    // Use both the provided handler and browser navigation
+    // Use the provided handler or React Router
     if (onNavigate) {
       onNavigate(href);
     } else {
-      // Fallback to direct navigation if no handler provided
-      window.location.href = href;
+      // Use React Router for SPA navigation
+      navigateRouter(href);
     }
     setShowPlatformMenu(false);
     setShowMobileMenu(false);

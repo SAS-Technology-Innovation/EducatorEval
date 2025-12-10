@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 import { BookOpen, ArrowRight, Users, Shield, Zap } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
 
   useEffect(() => {
@@ -15,9 +16,9 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     // Redirect authenticated users to dashboard
     if (!isLoading && isAuthenticated) {
-      window.location.href = '/app/dashboard';
+      navigate('/app/dashboard');
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
     return (

@@ -1,7 +1,8 @@
-import React from 'react';
 import { useAuthStore } from '../stores/auth';
 import TeacherDashboard from '../components/dashboard/TeacherDashboard';
 import ObserverDashboard from '../components/dashboard/ObserverDashboard';
+import ManagerDashboard from '../components/dashboard/ManagerDashboard';
+import StaffDashboard from '../components/dashboard/StaffDashboard';
 import AdminDashboard from '../admin/Dashboard';
 
 /**
@@ -9,8 +10,10 @@ import AdminDashboard from '../admin/Dashboard';
  *
  * Routes to the appropriate dashboard based on the user's active role:
  * - Administrator/Super Admin → AdminDashboard
+ * - Manager → ManagerDashboard
  * - Observer → ObserverDashboard
- * - Educator/Staff/Manager → TeacherDashboard (default)
+ * - Educator → TeacherDashboard
+ * - Staff → StaffDashboard
  */
 export default function DashboardPage() {
   const activeRole = useAuthStore(state => state.activeRole);
@@ -24,10 +27,18 @@ export default function DashboardPage() {
     return <AdminDashboard />;
   }
 
-  if (currentRole === 'observer' || currentRole === 'manager') {
+  if (currentRole === 'manager') {
+    return <ManagerDashboard />;
+  }
+
+  if (currentRole === 'observer') {
     return <ObserverDashboard />;
   }
 
-  // Default to teacher dashboard for educator and staff
-  return <TeacherDashboard />;
+  if (currentRole === 'educator') {
+    return <TeacherDashboard />;
+  }
+
+  // Default to staff dashboard for staff role or unknown roles
+  return <StaffDashboard />;
 }

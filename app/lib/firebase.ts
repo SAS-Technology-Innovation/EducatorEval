@@ -3,6 +3,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import type { Analytics } from 'firebase/analytics';
 
 // Firebase configuration - using environment variables
 const firebaseConfig = {
@@ -36,18 +37,24 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true
 }
 
 // Initialize analytics in browser with measurement ID
-let analytics: any = null;
+let analytics: Analytics | null = null;
 if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
   try {
     // Dynamic import to avoid SSR issues
     import('firebase/analytics').then(({ getAnalytics }) => {
       analytics = getAnalytics(app);
-      console.log('📊 Firebase Analytics initialized');
+      if (import.meta.env.DEV) {
+        console.log('📊 Firebase Analytics initialized');
+      }
     }).catch((error) => {
-      console.log('⚠️ Analytics failed to load:', error);
+      if (import.meta.env.DEV) {
+        console.log('⚠️ Analytics failed to load:', error);
+      }
     });
   } catch (error) {
-    console.log('⚠️ Analytics initialization error:', error);
+    if (import.meta.env.DEV) {
+      console.log('⚠️ Analytics initialization error:', error);
+    }
   }
 }
 

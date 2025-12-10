@@ -1,13 +1,14 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, TrendingUp, Target, BookOpen, Clock, Award } from 'lucide-react';
+import { Calendar, TrendingUp, Target, BookOpen, Clock, Award, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
+import { useObservations } from '../../hooks/useObservations';
+import { useMyGoals } from '../../hooks/useGoals';
 
 /**
  * Teacher-focused dashboard
  *
  * Displays:
- * - Upcoming observations this month
+ * - Observation statistics from real data
  * - Recent observation scores with trend
  * - Active SMART goals progress
  * - Recommended professional development
@@ -15,7 +16,44 @@ import { useAuthStore } from '../../stores/auth';
 export default function TeacherDashboard() {
   const user = useAuthStore(state => state.user);
 
+  // Fetch observations where user is the subject (being observed)
+  const { data: observations = [], isLoading: isLoadingObservations } = useObservations({
+    subjectId: user?.id,
+    limit: 20,
+  });
+
+  // Fetch user's goals
+  const { data: goals = [], isLoading: isLoadingGoals } = useMyGoals();
+
   if (!user) return null;
+
+  const isLoading = isLoadingObservations || isLoadingGoals;
+
+  // Calculate observation stats from real data
+  const completedObservations = observations.filter(o => o.status === 'completed' || o.status === 'reviewed');
+  const observationCount = completedObservations.length;
+
+  // Calculate average score from completed observations
+  const averageScore = completedObservations.length > 0
+    ? (completedObservations.reduce((sum, obs) => {
+        // Calculate average from responses if available
+        const responses = obs.responses || [];
+        if (responses.length === 0) return sum;
+        // Parse rating as number
+        const validResponses = responses.filter(r => r.rating && !isNaN(Number(r.rating)));
+        if (validResponses.length === 0) return sum;
+        const obsAvg = validResponses.reduce((s, r) => s + Number(r.rating), 0) / validResponses.length;
+        return sum + obsAvg;
+      }, 0) / completedObservations.length).toFixed(1)
+    : '--';
+
+  // Calculate goal stats
+  const activeGoals = goals.filter(g => g.status === 'active');
+  const activeGoalsCount = activeGoals.length;
+  const inProgressGoals = activeGoals.filter(g => g.progress > 0 && g.progress < 100).length;
+
+  // Get recent observations for history
+  const recentObservations = completedObservations.slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -33,96 +71,67 @@ export default function TeacherDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard
           icon={Calendar}
-          label="Observations This Year"
-          value="8"
-          trend="+2 from last year"
+          label="Observations"
+          value={isLoading ? '...' : String(observationCount)}
+          trend="This year"
           color="blue"
         />
         <StatCard
           icon={TrendingUp}
           label="Average Score"
-          value="4.2"
-          trend="+0.3 this quarter"
+          value={isLoading ? '...' : averageScore}
+          trend="From completed observations"
           color="green"
         />
         <StatCard
           icon={Target}
           label="Active Goals"
-          value="3"
-          trend="2 in progress"
+          value={isLoading ? '...' : String(activeGoalsCount)}
+          trend={inProgressGoals > 0 ? `${inProgressGoals} in progress` : 'No goals in progress'}
           color="purple"
         />
         <StatCard
           icon={Clock}
-          label="PD Hours"
-          value="24"
-          trend="6 hours remaining"
+          label="Pending"
+          value={isLoading ? '...' : String(observations.filter(o => o.status === 'submitted').length)}
+          trend="Awaiting review"
           color="orange"
         />
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Observations */}
+        {/* Recent Observations */}
         <DashboardCard
-          title="Upcoming Observations"
+          title="Recent Observations"
           icon={Calendar}
           actionLabel="View All"
           actionLink="/app/observations"
         >
-          <div className="space-y-3">
-            <ObservationItem
-              date="Nov 18, 2025"
-              observer="Dr. Sarah Johnson"
-              type="Formal Observation"
-              status="scheduled"
-            />
-            <ObservationItem
-              date="Dec 3, 2025"
-              observer="Mr. Robert Chen"
-              type="Walkthrough"
-              status="scheduled"
-            />
-            <div className="pt-2 text-center text-sm text-gray-500">
-              No more observations scheduled this month
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-sas-blue-600 mr-2" />
+              <span className="text-gray-600">Loading observations...</span>
             </div>
-          </div>
-        </DashboardCard>
-
-        {/* Recent Observations & Trends */}
-        <DashboardCard
-          title="Observation History"
-          icon={TrendingUp}
-          actionLabel="View Timeline"
-          actionLink="/app/observations"
-        >
-          <div className="space-y-3">
-            <ObservationHistoryItem
-              date="Oct 15, 2025"
-              observer="Dr. Sarah Johnson"
-              score={4.5}
-              framework="CRP Framework"
-            />
-            <ObservationHistoryItem
-              date="Sep 22, 2025"
-              observer="Ms. Jennifer Lee"
-              score={4.0}
-              framework="CRP Framework"
-            />
-            <ObservationHistoryItem
-              date="Aug 10, 2025"
-              observer="Dr. Sarah Johnson"
-              score={3.8}
-              framework="CRP Framework"
-            />
-          </div>
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-2 text-green-800 text-sm">
-              <TrendingUp className="w-4 h-4" />
-              <span className="font-semibold">Trending Up!</span>
-              <span>+0.7 improvement over 3 months</span>
+          ) : recentObservations.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p>No observations yet</p>
+              <p className="text-sm mt-1">Your observation history will appear here</p>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {recentObservations.map(obs => (
+                <ObservationHistoryItem
+                  key={obs.id}
+                  date={obs.date ? new Date(obs.date).toLocaleDateString() : 'No date'}
+                  observer={obs.observerName || 'Unknown Observer'}
+                  score={calculateObservationScore(obs)}
+                  framework={obs.frameworkName || 'CRP Framework'}
+                />
+              ))}
+            </div>
+          )}
         </DashboardCard>
 
         {/* SMART Goals Progress */}
@@ -132,59 +141,159 @@ export default function TeacherDashboard() {
           actionLabel="Manage Goals"
           actionLink="/app/professional-learning"
         >
-          <div className="space-y-4">
-            <GoalProgressItem
-              title="Improve student engagement through culturally responsive teaching"
-              progress={65}
-              deadline="Dec 31, 2025"
-              status="on-track"
-            />
-            <GoalProgressItem
-              title="Integrate technology to support diverse learners"
-              progress={40}
-              deadline="Feb 28, 2026"
-              status="on-track"
-            />
-            <GoalProgressItem
-              title="Develop assessment strategies for multilingual students"
-              progress={25}
-              deadline="May 15, 2026"
-              status="needs-attention"
-            />
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-sas-purple-600 mr-2" />
+              <span className="text-gray-600">Loading goals...</span>
+            </div>
+          ) : activeGoals.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              <Target className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p>No active goals</p>
+              <Link
+                to="/app/professional-learning"
+                className="text-sm text-sas-purple-600 hover:text-sas-purple-700 mt-2 inline-block"
+              >
+                Create your first goal
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activeGoals.slice(0, 3).map(goal => (
+                <GoalProgressItem
+                  key={goal.id}
+                  title={goal.title}
+                  progress={goal.progress}
+                  deadline={goal.targetDate ? new Date(goal.targetDate).toLocaleDateString() : 'No deadline'}
+                  status={getGoalStatus(goal)}
+                />
+              ))}
+              {activeGoals.length > 3 && (
+                <div className="text-center text-sm text-gray-500">
+                  +{activeGoals.length - 3} more goals
+                </div>
+              )}
+            </div>
+          )}
+        </DashboardCard>
+
+        {/* Observation Trend */}
+        <DashboardCard
+          title="Observation Trend"
+          icon={TrendingUp}
+          actionLabel="View Timeline"
+          actionLink="/app/observations"
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-sas-green-600 mr-2" />
+              <span className="text-gray-600">Loading trend...</span>
+            </div>
+          ) : completedObservations.length < 2 ? (
+            <div className="text-center py-6 text-gray-500">
+              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p>Not enough data for trends</p>
+              <p className="text-sm mt-1">Complete more observations to see trends</p>
+            </div>
+          ) : (
+            <div>
+              <div className="space-y-3">
+                {completedObservations.slice(0, 3).map(obs => (
+                  <div key={obs.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">
+                        {obs.date ? new Date(obs.date).toLocaleDateString() : 'No date'}
+                      </div>
+                      <div className="text-gray-500">{obs.observerName || 'Unknown'}</div>
+                    </div>
+                    <div className="text-lg font-bold text-gray-900">
+                      {calculateObservationScore(obs).toFixed(1)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {calculateTrend(completedObservations) !== 0 && (
+                <div className={`mt-4 p-3 rounded-lg ${
+                  calculateTrend(completedObservations) > 0
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-yellow-50 border border-yellow-200'
+                }`}>
+                  <div className={`flex items-center gap-2 text-sm ${
+                    calculateTrend(completedObservations) > 0 ? 'text-green-800' : 'text-yellow-800'
+                  }`}>
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="font-semibold">
+                      {calculateTrend(completedObservations) > 0 ? 'Trending Up!' : 'Room for Growth'}
+                    </span>
+                    <span>
+                      {calculateTrend(completedObservations) > 0 ? '+' : ''}
+                      {calculateTrend(completedObservations).toFixed(1)} over recent observations
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </DashboardCard>
 
         {/* Recommended Professional Development */}
         <DashboardCard
-          title="Recommended Professional Learning"
+          title="Professional Learning"
           icon={BookOpen}
           actionLabel="Browse All"
           actionLink="/app/professional-learning"
         >
-          <div className="space-y-3">
-            <PDRecommendation
-              title="Culturally Responsive Classroom Management"
-              reason="Based on recent observation feedback"
-              duration="2 hours"
-              type="Workshop"
-            />
-            <PDRecommendation
-              title="Differentiation Strategies for Diverse Learners"
-              reason="Aligns with your active goals"
-              duration="4 hours"
-              type="Course"
-            />
-            <PDRecommendation
-              title="Assessment in CRP Classrooms"
-              reason="Trending topic in your department"
-              duration="1 hour"
-              type="Webinar"
-            />
+          <div className="text-center py-6 text-gray-500">
+            <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p>Training suggestions coming soon</p>
+            <p className="text-sm mt-1">Recommendations will be based on your observations and goals</p>
+            <Link
+              to="/app/professional-learning"
+              className="mt-4 inline-block px-4 py-2 bg-sas-purple-100 text-sas-purple-700 rounded-lg text-sm font-medium hover:bg-sas-purple-200"
+            >
+              View Professional Learning
+            </Link>
           </div>
         </DashboardCard>
       </div>
     </div>
   );
+}
+
+// Helper function to calculate observation score
+function calculateObservationScore(obs: { responses?: Array<{ rating?: string }> }): number {
+  const responses = obs.responses || [];
+  if (responses.length === 0) return 0;
+  const validResponses = responses.filter(r => r.rating && !isNaN(Number(r.rating)));
+  if (validResponses.length === 0) return 0;
+  return validResponses.reduce((sum, r) => sum + Number(r.rating), 0) / validResponses.length;
+}
+
+// Helper function to calculate trend
+function calculateTrend(observations: Array<{ responses?: Array<{ rating?: string }> }>): number {
+  if (observations.length < 2) return 0;
+  const recent = observations.slice(0, Math.min(3, observations.length));
+  const older = observations.slice(Math.min(3, observations.length));
+  if (older.length === 0) return 0;
+
+  const recentAvg = recent.reduce((sum, obs) => sum + calculateObservationScore(obs), 0) / recent.length;
+  const olderAvg = older.reduce((sum, obs) => sum + calculateObservationScore(obs), 0) / older.length;
+
+  return recentAvg - olderAvg;
+}
+
+// Helper function to determine goal status
+function getGoalStatus(goal: { progress: number; targetDate?: string }): 'on-track' | 'needs-attention' | 'completed' {
+  if (goal.progress >= 100) return 'completed';
+  if (!goal.targetDate) return 'on-track';
+
+  const today = new Date();
+  const target = new Date(goal.targetDate);
+  const daysRemaining = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const expectedProgress = Math.max(0, 100 - (daysRemaining / 30 * 10)); // Rough expected progress
+
+  if (goal.progress < expectedProgress - 20) return 'needs-attention';
+  return 'on-track';
 }
 
 // Stat Card Component
@@ -251,34 +360,6 @@ function DashboardCard({ title, icon: Icon, actionLabel, actionLink, children }:
   );
 }
 
-// Observation Item Component
-interface ObservationItemProps {
-  date: string;
-  observer: string;
-  type: string;
-  status: 'scheduled' | 'completed';
-}
-
-function ObservationItem({ date, observer, type, status }: ObservationItemProps) {
-  return (
-    <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-sas-blue-300 hover:bg-blue-50 transition-colors">
-      <div className="flex-shrink-0 w-16 text-center">
-        <div className="text-sm font-semibold text-gray-900">{date.split(' ')[1]}</div>
-        <div className="text-xs text-gray-500">{date.split(' ')[0]}</div>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-900">{type}</div>
-        <div className="text-xs text-gray-600">with {observer}</div>
-      </div>
-      <div className="flex-shrink-0">
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-          {status}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // Observation History Item
 interface ObservationHistoryItemProps {
   date: string;
@@ -295,8 +376,8 @@ function ObservationHistoryItem({ date, observer, score, framework }: Observatio
         <div className="text-xs text-gray-600">{observer} • {framework}</div>
       </div>
       <div className="flex items-center gap-2">
-        <Award className={`w-4 h-4 ${score >= 4 ? 'text-green-500' : 'text-yellow-500'}`} />
-        <span className="text-lg font-bold text-gray-900">{score.toFixed(1)}</span>
+        <Award className={`w-4 h-4 ${score >= 4 ? 'text-green-500' : score >= 3 ? 'text-yellow-500' : 'text-gray-400'}`} />
+        <span className="text-lg font-bold text-gray-900">{score > 0 ? score.toFixed(1) : '--'}</span>
       </div>
     </div>
   );
@@ -334,34 +415,8 @@ function GoalProgressItem({ title, progress, deadline, status }: GoalProgressIte
             status === 'on-track' ? 'bg-green-500' :
             status === 'needs-attention' ? 'bg-yellow-500' : 'bg-blue-500'
           }`}
-          style={{ width: `${progress}%` }}
+          style={{ width: `${Math.min(100, progress)}%` }}
         />
-      </div>
-    </div>
-  );
-}
-
-// PD Recommendation
-interface PDRecommendationProps {
-  title: string;
-  reason: string;
-  duration: string;
-  type: string;
-}
-
-function PDRecommendation({ title, reason, duration, type }: PDRecommendationProps) {
-  return (
-    <div className="p-3 rounded-lg border border-gray-200 hover:border-sas-purple-300 hover:bg-purple-50 transition-colors">
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="text-sm font-medium text-gray-900">{title}</div>
-        <span className="px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700 whitespace-nowrap">
-          {type}
-        </span>
-      </div>
-      <div className="text-xs text-gray-600 mb-2">{reason}</div>
-      <div className="flex items-center gap-1 text-xs text-gray-500">
-        <Clock className="w-3 h-3" />
-        <span>{duration}</span>
       </div>
     </div>
   );

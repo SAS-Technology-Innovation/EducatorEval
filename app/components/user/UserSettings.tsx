@@ -56,7 +56,8 @@ interface UserSettings {
 
 interface UserSettingsProps {
   user: Partial<User>;
-  onUpdate?: (settings: UserSettings) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onUpdate?: (settings: any) => void;
 }
 
 const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
@@ -155,15 +156,26 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
     setHasChanges(true);
   };
 
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   const handleSave = async () => {
     try {
       setLoading(true);
-      // Here you would call your API to save user preferences
-      // await coreApi.users.updatePreferences(user.id, settings);
-      onUpdate?.(settings);
+      setSaveError(null);
+      setSaveSuccess(false);
+
+      // Call the onUpdate callback which saves to Firestore
+      await onUpdate?.(settings);
+
       setHasChanges(false);
+      setSaveSuccess(true);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to save settings:', error);
+      setSaveError('Failed to save settings. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -478,6 +490,19 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
             </div>
           </SettingSection>
         </div>
+
+        {/* Toast Notifications */}
+        {saveSuccess && (
+          <div className="fixed top-4 right-4 z-50 px-6 py-3 bg-green-500 text-white rounded-lg shadow-lg">
+            Settings saved successfully!
+          </div>
+        )}
+        {saveError && (
+          <div className="fixed top-4 right-4 z-50 px-6 py-3 bg-red-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            {saveError}
+          </div>
+        )}
 
         {/* Save Button */}
         {hasChanges && (

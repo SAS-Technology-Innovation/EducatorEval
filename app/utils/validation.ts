@@ -72,12 +72,12 @@ export const isValidEmployeeId = (id: string): boolean => {
 /**
  * Form validation helper
  */
-export interface ValidationRule {
-  validator: (value: any) => boolean;
+export interface ValidationRule<T = unknown> {
+  validator: (value: T) => boolean;
   message: string;
 }
 
-export const validateField = (value: any, rules: ValidationRule[]): string | null => {
+export const validateField = <T>(value: T, rules: ValidationRule<T>[]): string | null => {
   for (const rule of rules) {
     if (!rule.validator(value)) {
       return rule.message;

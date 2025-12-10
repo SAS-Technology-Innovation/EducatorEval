@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Calendar,
@@ -24,7 +25,8 @@ import {
 import { useAuthStore } from '../../stores/auth';
 import { useObservations } from '../../hooks/useObservations';
 
-export default function CRPLandingDashboard() {
+export default function FrameworkDashboard() {
+  const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   const { data: observations = [], isLoading, error } = useObservations(user?.schoolId);
 
@@ -170,15 +172,15 @@ export default function CRPLandingDashboard() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const handleQuickAction = (href: string) => {
-    window.location.href = href;
+    navigate(href);
   };
 
   const continueObservation = (observationId: string) => {
-    window.location.href = `/observations/${observationId}/edit`;
+    navigate(`/app/observations/${observationId}/edit`);
   };
 
   const viewObservation = (observationId: string) => {
-    window.location.href = `/observations/${observationId}`;
+    navigate(`/app/observations/${observationId}`);
   };
 
   if (isLoading) {

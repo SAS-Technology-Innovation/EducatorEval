@@ -105,10 +105,10 @@ export const useAuthStore = create<AuthState>()(
         const result = await signInWithPopup(auth, provider);
         
         // Check if user exists in Firestore, if not create profile
-        let existingUser: any = null;
+        let existingUser: User | null = null;
         try {
-          existingUser = await usersService.getById(result.user.uid);
-        } catch (error) {
+          existingUser = await usersService.getById(result.user.uid) as User | null;
+        } catch {
           // User doesn't exist, create new profile
         }
         

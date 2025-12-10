@@ -77,6 +77,26 @@ export const firestoreApi = {
         user.primaryRole === 'educator' ||
         user.secondaryRoles?.includes('educator')
       );
+    },
+
+    getByDivision: async (divisionId: string): Promise<User[]> => {
+      const results = await baseUsersService.list({
+        where: [
+          ['divisionId', '==', divisionId],
+          ['isActive', '==', true]
+        ]
+      });
+      return results as User[];
+    },
+
+    getByDepartment: async (departmentId: string): Promise<User[]> => {
+      const results = await baseUsersService.list({
+        where: [
+          ['primaryDepartmentId', '==', departmentId],
+          ['isActive', '==', true]
+        ]
+      });
+      return results as User[];
     }
   },
 

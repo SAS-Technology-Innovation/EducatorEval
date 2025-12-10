@@ -46,7 +46,10 @@ export const queryKeys = {
 export function useUsers() {
   return useQuery({
     queryKey: queryKeys.users.all,
-    queryFn: () => usersService.list(),
+    queryFn: async (): Promise<User[]> => {
+      const results = await usersService.list();
+      return results as User[];
+    },
   });
 }
 
@@ -70,6 +73,22 @@ export function useUsersBySchool(schoolId: string) {
     queryKey: queryKeys.users.bySchool(schoolId),
     queryFn: () => firestoreApi.users.getBySchool(schoolId),
     enabled: !!schoolId,
+  });
+}
+
+export function useUsersByDivision(divisionId: string | undefined) {
+  return useQuery({
+    queryKey: ['users', 'division', divisionId] as const,
+    queryFn: () => firestoreApi.users.getByDivision(divisionId!),
+    enabled: !!divisionId,
+  });
+}
+
+export function useUsersByDepartment(departmentId: string | undefined) {
+  return useQuery({
+    queryKey: ['users', 'department', departmentId] as const,
+    queryFn: () => firestoreApi.users.getByDepartment(departmentId!),
+    enabled: !!departmentId,
   });
 }
 
@@ -116,7 +135,10 @@ export function useDeleteUser() {
 export function useOrganizations() {
   return useQuery({
     queryKey: queryKeys.organizations.all,
-    queryFn: () => organizationsService.list(),
+    queryFn: async (): Promise<Organization[]> => {
+      const results = await organizationsService.list();
+      return results as Organization[];
+    },
   });
 }
 

@@ -41,11 +41,13 @@ If you discover a security vulnerability within EducatorEval, please send an ema
 ## Development Security
 
 ### Mock Authentication
-- Located in `src/stores/mockAuthStore.ts`
+
+- Located in `app/stores/mockAuthStore.ts`
 - Auto-authenticates as super admin user
 - **MUST be disabled for production** by switching to `authStore.ts`
 
 ### Firebase Emulators
+
 - Use emulators for local development to avoid production data exposure
 - Run with: `npm run dev:emulated`
 
@@ -53,7 +55,7 @@ If you discover a security vulnerability within EducatorEval, please send an ema
 
 Before deploying to production:
 
-- [ ] Switch from `mockAuthStore` to `authStore` in `src/stores/auth.ts`
+- [ ] Switch from `mockAuthStore` to `authStore` in `app/stores/auth.ts`
 - [ ] Ensure all environment variables are set in Firebase Hosting
 - [ ] Review and deploy Firestore security rules
 - [ ] Review and deploy Storage security rules

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth';
 import {
-  Home,
   BarChart3,
   Book,
   Target,
@@ -28,7 +28,8 @@ interface SidebarProps {
   currentPath?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPath = '/' }) => {
+const Sidebar = ({ currentPath = '/' }: SidebarProps) => {
+  const navigate = useNavigate();
   const { user, hasRole, signOut, activeRole } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -165,15 +166,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath = '/' }) => {
   };
 
   const handleNavigation = (href: string) => {
-    window.location.href = href;
+    navigate(href);
   };
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      window.location.href = '/login';
+      navigate('/auth/login');
     } catch (error) {
-      console.error('Sign out failed:', error);
+      if (import.meta.env.DEV) {
+        console.error('Sign out failed:', error);
+      }
     }
   };
 
