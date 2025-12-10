@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LogIn, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import { useNavigate } from 'react-router-dom';
+import {
+  LogIn,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   AlertCircle,
   Loader2,
   BookOpen,
@@ -24,6 +25,7 @@ interface LoginFormProps {
 type FormMode = 'signin' | 'signup' | 'reset';
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<FormMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +40,9 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
   // Initialize auth listener on component mount
   useEffect(() => {
-    console.log('🔧 LoginForm: Initializing auth store...');
+    if (import.meta.env.DEV) {
+      console.log('🔧 LoginForm: Initializing auth store...');
+    }
     const unsubscribe = initialize();
     return () => unsubscribe();
   }, [initialize]);
@@ -46,34 +50,44 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      console.log('✅ User already authenticated, redirecting to dashboard...');
-      window.location.href = '/dashboard';
+      if (import.meta.env.DEV) {
+        console.log('✅ User already authenticated, redirecting to dashboard...');
+      }
+      navigate('/app/dashboard');
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    
-    console.log('🔐 Attempting sign in with:', email);
+
+    if (import.meta.env.DEV) {
+      console.log('🔐 Attempting sign in with:', email);
+    }
     setIsSubmitting(true);
     clearError();
-    
+
     try {
       await signIn(email, password);
-      console.log('✅ Sign in successful!');
-      
+      if (import.meta.env.DEV) {
+        console.log('✅ Sign in successful!');
+      }
+
       // Navigate to dashboard after successful login
       if (onSuccess) {
         onSuccess();
       } else {
-        console.log('🔄 Redirecting to dashboard...');
+        if (import.meta.env.DEV) {
+          console.log('🔄 Redirecting to dashboard...');
+        }
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          navigate('/app/dashboard');
         }, 1000); // Small delay to ensure auth state is updated
       }
     } catch (error) {
-      console.error('❌ Login error:', error);
+      if (import.meta.env.DEV) {
+        console.error('❌ Login error:', error);
+      }
       // Error is handled by the auth store
     } finally {
       setIsSubmitting(false);
@@ -92,18 +106,20 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
     setIsSubmitting(true);
     clearError();
-    
+
     try {
       await signUp(email, password, displayName);
-      
+
       // Navigate to dashboard after successful signup
       if (onSuccess) {
         onSuccess();
       } else {
-        window.location.href = '/dashboard';
+        navigate('/app/dashboard');
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Signup error:', error);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -115,12 +131,14 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
     setIsSubmitting(true);
     clearError();
-    
+
     try {
       await sendPasswordReset(email);
       setResetEmailSent(true);
     } catch (error) {
-      console.error('Password reset error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Password reset error:', error);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -131,18 +149,20 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
     setIsSubmitting(true);
     clearError();
-    
+
     try {
       await signInWithGoogle();
-      
+
       // Navigate to dashboard after successful login
       if (onSuccess) {
         onSuccess();
       } else {
-        window.location.href = '/dashboard';
+        navigate('/app/dashboard');
       }
     } catch (error) {
-      console.error('Google sign in error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Google sign in error:', error);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -158,7 +178,9 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
   };
 
   const switchMode = (newMode: FormMode) => {
-    console.log('Switching mode to:', newMode); // Debug log
+    if (import.meta.env.DEV) {
+      console.log('Switching mode to:', newMode);
+    }
     setMode(newMode);
     resetForm();
   };

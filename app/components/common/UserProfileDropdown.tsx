@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Settings,
@@ -24,6 +25,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   darkMode = false,
   onToggleDarkMode
 }) => {
+  const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
   const [isOpen, setIsOpen] = useState(false);
@@ -57,26 +59,26 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
 
     switch (action) {
       case 'profile':
-        window.location.href = '/app/profile';
+        navigate('/app/profile');
         break;
       case 'settings':
-        window.location.href = '/app/settings';
+        navigate('/app/settings');
         break;
       case 'notifications':
-        window.location.href = '/app/notifications';
+        navigate('/app/notifications');
         break;
       case 'schedule':
-        window.location.href = '/app/schedule';
+        navigate('/app/schedule');
         break;
       case 'help':
-        window.location.href = '/app/help';
+        navigate('/app/help');
         break;
       case 'admin':
-        window.location.href = '/admin';
+        navigate('/admin');
         break;
       case 'signout':
         await signOut();
-        window.location.href = '/auth/login';
+        navigate('/auth/login');
         break;
       case 'darkmode':
         onToggleDarkMode?.();

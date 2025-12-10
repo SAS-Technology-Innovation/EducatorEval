@@ -13,6 +13,7 @@ import AdminDashboard from './app/admin/Dashboard';
 import AdminUsers from './app/admin/Users';
 import AdminOrganizations from './app/admin/Organizations';
 import AdminFrameworks from './app/admin/Frameworks';
+import AdminSettings from './app/components/admin/AdminSettings';
 
 // App pages (protected)
 import DashboardPage from './app/app/DashboardPage';
@@ -57,6 +58,11 @@ function App() {
         <Route path="/admin/users" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AdminUsers /></ProtectedLayout>} />
         <Route path="/admin/organizations" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AdminOrganizations /></ProtectedLayout>} />
         <Route path="/admin/frameworks" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AdminFrameworks /></ProtectedLayout>} />
+        <Route path="/admin/settings" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AdminSettings /></ProtectedLayout>} />
+
+        {/* Stub routes for pages referenced in navigation but not yet implemented */}
+        <Route path="/app/notifications" element={<ProtectedLayout><StubPage title="Notifications" /></ProtectedLayout>} />
+        <Route path="/app/help" element={<ProtectedLayout><StubPage title="Help & Support" /></ProtectedLayout>} />
       </Routes>
     </AppProviders>
   );
@@ -73,6 +79,16 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-sas-background flex items-center justify-center">
       <LoginForm />
+    </div>
+  );
+}
+
+// Stub page for routes that are not yet implemented
+function StubPage({ title }: { title: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">{title}</h1>
+      <p className="text-gray-600">This page is coming soon.</p>
     </div>
   );
 }
