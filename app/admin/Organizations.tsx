@@ -1,6 +1,6 @@
 import React from 'react';
-import OrganizationsManagementConnected from '../components/admin/OrganizationsManagementConnected';
+import OrganizationsManagement from '../components/admin/OrganizationsManagement';
 
 export default function Organizations() {
-  return <OrganizationsManagementConnected />;
+  return <OrganizationsManagement />;
 }

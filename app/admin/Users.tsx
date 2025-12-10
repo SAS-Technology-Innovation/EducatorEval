@@ -1,6 +1,6 @@
 import React from 'react';
-import UsersManagementConnected from '../components/admin/UsersManagementConnected';
+import UsersManagement from '../components/admin/UsersManagement';
 
 export default function Users() {
-  return <UsersManagementConnected />;
+  return <UsersManagement />;
 }
