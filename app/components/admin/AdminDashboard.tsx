@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Users,
   FileText,
@@ -40,10 +39,10 @@ export default function AdminDashboard() {
         return date >= monthAgo;
       }).length,
       completed: observations.filter(o => o.status === 'completed' || o.status === 'reviewed').length,
-      inProgress: observations.filter(o => o.status === 'in_progress' || o.status === 'draft').length,
-      scheduled: observations.filter(o => o.status === 'scheduled').length,
+      inProgress: observations.filter(o => o.status === 'draft').length,
+      scheduled: 0, // Not tracked in current schema
       submitted: observations.filter(o => o.status === 'submitted').length,
-      crpEvidenceRate: observationStats?.crpEvidenceRate || 0,
+      crpEvidenceRate: observationStats?.averageEvidenceRate || 0,
       goal: 5000,
       goalDeadline: 'May 2026'
     },
@@ -69,20 +68,38 @@ export default function AdminDashboard() {
   };
 
   // Get top observers from observations data
-  const observerCounts = observations.reduce((acc, obs) => {
+  const observerData = observations.reduce((acc, obs) => {
     if (obs.observerName) {
-      acc[obs.observerName] = (acc[obs.observerName] || 0) + 1;
+      if (!acc[obs.observerName]) {
+        acc[obs.observerName] = { count: 0, totalScore: 0, scoredCount: 0 };
+      }
+      acc[obs.observerName].count += 1;
+
+      // Calculate average score from responses if available
+      const responses = obs.responses || [];
+      if (responses.length > 0) {
+        // Parse rating as number (1-4 scale typically)
+        const validResponses = responses.filter(r => r.rating && !isNaN(Number(r.rating)));
+        if (validResponses.length > 0) {
+          const avgScore = validResponses.reduce((sum, r) => sum + Number(r.rating), 0) / validResponses.length;
+          acc[obs.observerName].totalScore += avgScore;
+          acc[obs.observerName].scoredCount += 1;
+        }
+      }
     }
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { count: number; totalScore: number; scoredCount: number }>);
 
-  const topObservers = Object.entries(observerCounts)
-    .sort(([, a], [, b]) => b - a)
+  const topObservers = Object.entries(observerData)
+    .sort(([, a], [, b]) => b.count - a.count)
     .slice(0, 5)
-    .map(([name, count]) => ({
+    .map(([name, data]) => ({
       name,
-      observations: count,
-      crpRate: Math.round(Math.random() * 30 + 60) // Placeholder - would calculate from real CRP evidence
+      observations: data.count,
+      // Calculate CRP rate as percentage of max score (5) - shows quality of CRP evidence
+      crpRate: data.scoredCount > 0
+        ? Math.round((data.totalScore / data.scoredCount / 5) * 100)
+        : 0
     }));
 
   // Get recent activity from observations
@@ -95,7 +112,7 @@ export default function AdminDashboard() {
       type: 'observation',
       user: obs.observerName || 'Unknown',
       action: obs.status === 'completed' ? 'completed observation' : obs.status === 'submitted' ? 'submitted observation' : 'created observation',
-      target: `${obs.teacherName || 'Unknown Teacher'} - ${obs.subject || 'Unknown Subject'}`,
+      target: `${obs.subjectName || 'Unknown Teacher'} - ${obs.context?.subject || obs.frameworkName || 'Observation'}`,
       time: obs.createdAt ? formatTimeAgo(new Date(obs.createdAt)) : 'Unknown',
       status: obs.status === 'completed' || obs.status === 'submitted' ? 'success' : 'info'
     }));

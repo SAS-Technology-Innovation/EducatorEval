@@ -175,6 +175,9 @@ export const departmentsService = new FirestoreService('departments');
 export const observationsService = new FirestoreService('observations');
 export const schedulesService = new FirestoreService('schedules');
 export const frameworksService = new FirestoreService('frameworks');
+export const goalTemplatesService = new FirestoreService('goal_templates');
+export const goalsService = new FirestoreService('goals');
+export const alignmentsService = new FirestoreService('framework_alignments');
 
 // Specialized query functions
 export const firestoreQueries = {

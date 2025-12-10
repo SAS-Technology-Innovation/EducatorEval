@@ -15,6 +15,7 @@ import AdminOrganizations from './app/admin/Organizations';
 import AdminFrameworks from './app/admin/Frameworks';
 import AdminSettings from './app/components/admin/AdminSettings';
 import GoalTemplateManagement from './app/components/admin/GoalTemplateManagement';
+import AlignmentsManagement from './app/components/admin/AlignmentsManagement';
 
 // App pages (protected)
 import DashboardPage from './app/app/DashboardPage';
@@ -61,6 +62,7 @@ function App() {
         <Route path="/admin/frameworks" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AdminFrameworks /></ProtectedLayout>} />
         <Route path="/admin/settings" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AdminSettings /></ProtectedLayout>} />
         <Route path="/admin/goal-templates" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><GoalTemplateManagement /></ProtectedLayout>} />
+        <Route path="/admin/alignments" element={<ProtectedLayout requireRoles={['administrator', 'super_admin']}><AlignmentsManagement /></ProtectedLayout>} />
 
         {/* Stub routes for pages referenced in navigation but not yet implemented */}
         <Route path="/app/notifications" element={<ProtectedLayout><StubPage title="Notifications" /></ProtectedLayout>} />
