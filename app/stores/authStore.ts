@@ -19,6 +19,7 @@ interface AuthState {
   // State
   firebaseUser: FirebaseUser | null;
   user: User | null;
+  activeRole: UserRole | null; // Current role context the user is acting in
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
@@ -32,13 +33,15 @@ interface AuthState {
   initialize: () => () => void;
   clearError: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
-  
+  setActiveRole: (role: UserRole) => void; // Switch active role context
+
   // Helper methods
   hasRole: (role: UserRole) => boolean;
   hasPermission: (permission: string) => boolean;
   isAdmin: () => boolean;
   canObserve: () => boolean;
   canManage: () => boolean;
+  getAvailableRoles: () => UserRole[]; // Get all roles user can switch between
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -46,6 +49,7 @@ export const useAuthStore = create<AuthState>()(
     // Initial state
     firebaseUser: null,
     user: null,
+    activeRole: null,
     isLoading: true,
     isAuthenticated: false,
     error: null,
@@ -148,9 +152,10 @@ export const useAuthStore = create<AuthState>()(
     signOut: async () => {
       try {
         await signOut(auth);
-        set({ 
-          firebaseUser: null, 
-          user: null, 
+        set({
+          firebaseUser: null,
+          user: null,
+          activeRole: null,
           isAuthenticated: false,
           error: null
         });
@@ -167,49 +172,51 @@ export const useAuthStore = create<AuthState>()(
         
         if (firebaseUser) {
           try {
-            console.log('🔍 Checking for existing user:', firebaseUser.email, 'UID:', firebaseUser.uid);
+            if (import.meta.env.DEV) console.log('🔍 Checking for existing user:', firebaseUser.email, 'UID:', firebaseUser.uid);
             
             // STEP 1: Try to load user profile data from Firestore by UID first
             let userData: User | null = null;
             try {
               userData = await usersService.getById(firebaseUser.uid) as User | null;
               if (userData) {
-                console.log('✅ Found existing user by UID:', userData.email);
+                if (import.meta.env.DEV) console.log('✅ Found existing user by UID:', userData.email);
                 // Update last login
                 await usersService.update(firebaseUser.uid, { 
                   lastLogin: new Date(),
                   updatedAt: new Date()
                 });
               }
-            } catch (uidError: any) {
-              console.log('UID lookup failed (user may not exist):', uidError.message);
+            } catch (uidError: unknown) {
+              if (import.meta.env.DEV) console.log('UID lookup failed (user may not exist):', uidError instanceof Error ? uidError.message : 'Unknown error');
             }
             
             // STEP 2: If not found by UID, search by email to find existing records
             if (!userData && firebaseUser.email) {
-              console.log('🔍 Searching for existing user by email...');
+              if (import.meta.env.DEV) console.log('🔍 Searching for existing user by email...');
               try {
                 // Query all users to find by email (since we can't query Firestore by email field directly)
                 const allUsers = await usersService.list();
-                const existingUserByEmail = allUsers.find((user: any) => user.email === firebaseUser.email) as User | undefined;
-                
+                const existingUserByEmail = allUsers.find((u: Record<string, unknown>) => u.email === firebaseUser.email) as User | undefined;
+
                 if (existingUserByEmail) {
-                  console.log('⚠️ Found existing user with different UID! Email:', existingUserByEmail.email, 'Existing UID:', existingUserByEmail.id);
-                  console.log('🔧 This indicates a duplicate/orphaned record that should be cleaned up');
-                  
+                  if (import.meta.env.DEV) {
+                    console.log('⚠️ Found existing user with different UID! Email:', existingUserByEmail.email, 'Existing UID:', existingUserByEmail.id);
+                    console.log('🔧 This indicates a duplicate/orphaned record that should be cleaned up');
+                  }
+
                   // Option A: Use the existing record and update its UID to match Firebase Auth
                   // Option B: Delete the old record and create new one
                   // For now, we'll log it and not create a duplicate
                   userData = existingUserByEmail;
                 }
-              } catch (emailSearchError: any) {
-                console.log('Email search failed:', emailSearchError.message);
+              } catch (emailSearchError: unknown) {
+                if (import.meta.env.DEV) console.log('Email search failed:', emailSearchError instanceof Error ? emailSearchError.message : 'Unknown error');
               }
             }
             
             // STEP 3: Create new user if NO existing record found
             if (!userData && firebaseUser.email) {
-              console.log('➕ Creating new user profile for:', firebaseUser.email);
+              if (import.meta.env.DEV) console.log('➕ Creating new user profile for:', firebaseUser.email);
               
               // Auto-create user profile for development
               try {
@@ -246,10 +253,10 @@ export const useAuthStore = create<AuthState>()(
                 };
                 
                 userData = await usersService.create(newUserData) as User;
-                console.log('✅ Auto-created user profile:', userData?.email);
-                
+                if (import.meta.env.DEV) console.log('✅ Auto-created user profile:', userData?.email);
+
               } catch (createError) {
-                console.error('❌ Failed to auto-create user profile:', createError);
+                if (import.meta.env.DEV) console.error('❌ Failed to auto-create user profile:', createError);
                 
                 // Fallback to minimal user object if Firestore creation fails
                 userData = {
@@ -286,14 +293,15 @@ export const useAuthStore = create<AuthState>()(
               }
             }
             
-            set({ 
-              firebaseUser, 
-              user: userData, 
-              isAuthenticated: true, 
-              isLoading: false 
+            set({
+              firebaseUser,
+              user: userData,
+              activeRole: userData?.primaryRole || null,
+              isAuthenticated: true,
+              isLoading: false
             });
           } catch (error) {
-            console.error('Failed to load user data:', error);
+            if (import.meta.env.DEV) console.error('Failed to load user data:', error);
             
             // Create a minimal user object from Firebase Auth data
             const minimalUser: User = {
@@ -325,20 +333,22 @@ export const useAuthStore = create<AuthState>()(
               metadata: {}
             };
             
-            set({ 
+            set({
               firebaseUser,
               user: minimalUser,
+              activeRole: minimalUser.primaryRole,
               isAuthenticated: true,
               isLoading: false,
               error: null // Clear error since we have fallback data
             });
           }
         } else {
-          set({ 
-            firebaseUser: null, 
-            user: null, 
-            isAuthenticated: false, 
-            isLoading: false 
+          set({
+            firebaseUser: null,
+            user: null,
+            activeRole: null,
+            isAuthenticated: false,
+            isLoading: false
           });
         }
       });
@@ -394,6 +404,25 @@ export const useAuthStore = create<AuthState>()(
     canManage: () => {
       const { hasRole } = get();
       return hasRole('manager') || hasRole('administrator') || hasRole('super_admin');
+    },
+
+    // Set active role context
+    setActiveRole: (role: UserRole) => {
+      const { user } = get();
+      if (!user) return;
+
+      // Verify user has this role
+      const availableRoles = [user.primaryRole, ...user.secondaryRoles];
+      if (availableRoles.includes(role)) {
+        set({ activeRole: role });
+      }
+    },
+
+    // Get all roles user can switch between
+    getAvailableRoles: () => {
+      const { user } = get();
+      if (!user) return [];
+      return [user.primaryRole, ...user.secondaryRoles];
     }
   }))
 );

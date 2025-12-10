@@ -1,3 +1,12 @@
+/**
+ * @deprecated This component is not currently used.
+ * The active dashboards are:
+ * - CRPLandingDashboard (main landing page)
+ * - TeacherDashboard (for educators)
+ * - ObserverDashboard (for observers)
+ * - AdminDashboardNew (for admins)
+ * See app/app/DashboardPage.tsx for routing logic.
+ */
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 

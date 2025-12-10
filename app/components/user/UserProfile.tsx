@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Edit, 
-  Save, 
-  X, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Edit,
+  Save,
+  X,
   Upload,
   Camera,
   GraduationCap,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import TagSelector from '../common/TagSelector';
 import { coreApi } from '../../api';
+import type { User as UserType } from '../../types';
 
 interface Tag {
   id: string;
@@ -26,9 +27,35 @@ interface Tag {
   color: string;
 }
 
+interface Division {
+  id: string;
+  name: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface ProfileFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  title: string;
+  pronouns: string;
+  languages: string[];
+  subjects: string[];
+  grades: string[];
+  divisionIds: string[];
+  departmentIds: string[];
+  bio: string;
+  preferences: Record<string, unknown>;
+}
+
 interface UserProfileProps {
-  user: any;
-  onUpdate?: (userData: any) => void;
+  user: Partial<UserType> & { id: string };
+  onUpdate?: (userData: Partial<UserType>) => void;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
@@ -52,8 +79,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
     preferences: {}
   });
 
-  const [divisions, setDivisions] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [availableDivisionTags, setAvailableDivisionTags] = useState<Tag[]>([]);
   const [availableDepartmentTags, setAvailableDepartmentTags] = useState<Tag[]>([]);
   const [selectedDivisionTags, setSelectedDivisionTags] = useState<Tag[]>([]);
@@ -148,7 +175,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
     ).join(' ') || '';
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: keyof ProfileFormData, value: string | string[] | Record<string, unknown>) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

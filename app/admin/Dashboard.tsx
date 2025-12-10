@@ -1,6 +1,6 @@
 import React from 'react';
-import AdminDashboardNew from '../components/admin/AdminDashboardNew';
+import AdminDashboard from '../components/admin/AdminDashboard';
 
 export default function Dashboard() {
-  return <AdminDashboardNew />;
+  return <AdminDashboard />;
 }

@@ -1,9 +1,28 @@
 import React, { useState } from 'react';
 import { Camera, Mic, MapPin, Save, Send, Clock, BookOpen } from 'lucide-react';
 
+interface ObservationFormData {
+  teacher: string;
+  teacherId: string;
+  subject: string;
+  className: string;
+  room: string;
+  period: string;
+  grade: string;
+  duration: number;
+  startTime: string;
+  responses: Record<string, string>;
+  comments: Record<string, string>;
+  overallComment: string;
+  lastModified?: string;
+  completedAt?: string;
+  status?: string;
+  observationDuration?: number;
+}
+
 interface ObservationFormProps {
-  onSave?: (data: any) => void;
-  onSubmit?: (data: any) => void;
+  onSave?: (data: ObservationFormData) => void;
+  onSubmit?: (data: ObservationFormData) => void;
   onCancel?: () => void;
 }
 

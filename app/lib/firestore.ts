@@ -11,9 +11,14 @@ import {
   where,
   orderBy,
   limit,
-  Timestamp
+  Timestamp,
+  WhereFilterOp,
+  DocumentData
 } from 'firebase/firestore';
 import { db } from './firebase';
+
+// Type for Firestore where clause
+type WhereClause = [string, WhereFilterOp, unknown];
 
 // Get environment-based collection prefix
 const getCollectionPrefix = () => {
@@ -33,7 +38,7 @@ export class FirestoreService {
 
   // List documents with optional query constraints
   async list(options?: {
-    where?: [string, any, any][];
+    where?: WhereClause[];
     orderBy?: [string, 'asc' | 'desc'];
     limit?: number;
   }) {
@@ -91,7 +96,7 @@ export class FirestoreService {
   }
 
   // Create new document
-  async create(data: any) {
+  async create(data: Record<string, unknown>) {
     try {
       const now = Timestamp.now();
       const docData = {
@@ -114,7 +119,7 @@ export class FirestoreService {
   }
 
   // Update existing document
-  async update(id: string, data: any) {
+  async update(id: string, data: Record<string, unknown>) {
     try {
       const docRef = doc(db, this.collectionName, id);
       const updateData = {
@@ -152,6 +157,8 @@ export const schoolsService = new FirestoreService('schools');
 export const divisionsService = new FirestoreService('divisions');
 export const departmentsService = new FirestoreService('departments');
 export const observationsService = new FirestoreService('observations');
+export const schedulesService = new FirestoreService('schedules');
+export const frameworksService = new FirestoreService('frameworks');
 
 // Specialized query functions
 export const firestoreQueries = {

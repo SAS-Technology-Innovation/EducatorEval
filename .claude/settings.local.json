@@ -1,26 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)",
-      "Bash(npm run build:*)",
-      "WebFetch(domain:www.sas.edu.sg)",
-      "Bash(pkill:*)",
-      "Bash(cat:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npm outdated:*)",
-      "Bash(npm update:*)",
-      "Bash(firebase projects:list:*)",
-      "Bash(firebase use:*)",
-      "Bash(curl:*)",
-      "Bash(lsof:*)",
-      "Bash(npm install:*)",
-      "Bash(npx vite:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: Add deprecation notices to unused components\n\nMark components that are not currently used in routing with @deprecated:\n- UserDashboard.tsx - superseded by role-specific dashboards\n- SimpleObservationsPage.tsx - superseded by role-specific observation views\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(npm run build:check:*)",
-      "Bash(tree:*)",
+      "Bash(git commit:*)",
       "Bash(find:*)",
-      "Bash(./check-env.sh:*)",
-      "Bash(chmod:*)",
-      "Bash(./scripts/clean-build-staging.sh:*)"
+      "Bash(xargs basename:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
