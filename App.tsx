@@ -8,7 +8,7 @@ import { useAuthStore } from './app/stores/auth';
 
 // Public pages
 import LandingPage from './app/public/LandingPage';
-import LoginForm from './app/auth/LoginForm';
+import LoginForm from './app/components/auth/LoginForm';
 
 // Admin pages
 import AdminDashboard from './app/admin/Dashboard';

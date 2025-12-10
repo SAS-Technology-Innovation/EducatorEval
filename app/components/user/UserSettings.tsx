@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Settings, 
-  Bell, 
-  Shield, 
-  Eye, 
-  Globe, 
-  Palette, 
-  Clock, 
-  Save, 
+import {
+  Settings,
+  Bell,
+  Shield,
+  Eye,
+  Globe,
+  Palette,
+  Clock,
+  Save,
   Monitor,
   Sun,
   Moon,
@@ -17,10 +17,46 @@ import {
   Calendar,
   AlertCircle
 } from 'lucide-react';
+import type { User } from '../../types';
+
+interface NotificationChannel {
+  observations: boolean;
+  evaluations: boolean;
+  reminders: boolean;
+  systemUpdates: boolean;
+  weeklyDigest?: boolean;
+}
+
+interface UserSettings {
+  theme: string;
+  language: string;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: string;
+  notifications: {
+    email: NotificationChannel;
+    push: Omit<NotificationChannel, 'weeklyDigest'>;
+    inApp: Omit<NotificationChannel, 'weeklyDigest'>;
+  };
+  privacy: {
+    profileVisibility: string;
+    showEmail: boolean;
+    showPhone: boolean;
+    allowDirectMessages: boolean;
+  };
+  dashboard: {
+    defaultView: string;
+    showUpcomingObservations: boolean;
+    showRecentActivity: boolean;
+    observationsPerPage: number;
+    autoRefresh: boolean;
+    refreshInterval: number;
+  };
+}
 
 interface UserSettingsProps {
-  user: any;
-  onUpdate?: (settings: any) => void;
+  user: Partial<User>;
+  onUpdate?: (settings: UserSettings) => void;
 }
 
 const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
@@ -86,18 +122,26 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
     }
   }, [user]);
 
-  const handleSettingChange = (category: string, key: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
+  const handleSettingChange = (category: string, key: string, value: string | boolean | number) => {
+    if (category === '') {
+      // Top-level setting
+      setSettings(prev => ({
+        ...prev,
         [key]: value
-      }
-    }));
+      }));
+    } else {
+      setSettings(prev => ({
+        ...prev,
+        [category]: {
+          ...(prev as Record<string, Record<string, unknown>>)[category],
+          [key]: value
+        }
+      }));
+    }
     setHasChanges(true);
   };
 
-  const handleNestedSettingChange = (category: string, subcategory: string, key: string, value: any) => {
+  const handleNestedSettingChange = (category: string, subcategory: string, key: string, value: boolean) => {
     setSettings(prev => ({
       ...prev,
       [category]: {

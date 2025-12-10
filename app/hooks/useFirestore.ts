@@ -46,7 +46,7 @@ export const queryKeys = {
 export function useUsers() {
   return useQuery({
     queryKey: queryKeys.users.all,
-    queryFn: () => usersService.getAll(),
+    queryFn: () => usersService.list(),
   });
 }
 
@@ -116,7 +116,7 @@ export function useDeleteUser() {
 export function useOrganizations() {
   return useQuery({
     queryKey: queryKeys.organizations.all,
-    queryFn: () => organizationsService.getAll(),
+    queryFn: () => organizationsService.list(),
   });
 }
 
@@ -171,7 +171,7 @@ export function useDeleteOrganization() {
 export function useSchedules() {
   return useQuery({
     queryKey: queryKeys.schedules.all,
-    queryFn: () => schedulesService.getAll(),
+    queryFn: () => schedulesService.list(),
   });
 }
 

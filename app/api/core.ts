@@ -1,559 +1,655 @@
-// Core Platform API Client
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
+// Core Platform API Client - Direct Firestore Operations
+// Refactored to use Firestore directly instead of non-existent API endpoints
+
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
   deleteDoc,
   query,
   where,
   orderBy,
-  limit as firestoreLimit
+  limit as firestoreLimit,
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import type { User, UserRole, Organization, School, Division, Department, EducatorSchedule, ClassAssignment } from '../types';
 
-async function getAuthToken(): Promise<string | null> {
-  const user = auth.currentUser;
-  if (!user) return null;
-  return await user.getIdToken();
+// Get environment-based collection prefix
+const getCollectionPrefix = (): string => {
+  const env = import.meta.env.VITE_ENVIRONMENT || 'staging';
+  return env === 'production' ? '' : 'staging_';
+};
+
+// Get prefixed collection name
+const getCollection = (name: string): string => `${getCollectionPrefix()}${name}`;
+
+// Convert Firestore timestamp to Date
+const toDate = (timestamp: unknown): Date | undefined => {
+  if (!timestamp) return undefined;
+  if (timestamp instanceof Timestamp) return timestamp.toDate();
+  if (timestamp instanceof Date) return timestamp;
+  if (typeof timestamp === 'string') return new Date(timestamp);
+  return undefined;
+};
+
+// User filters interface
+interface UserFilters {
+  schoolId?: string;
+  divisionId?: string;
+  departmentId?: string;
+  role?: UserRole;
+  isActive?: boolean;
+  limit?: number;
+  email?: string;
+}
+
+// Schedule filters interface
+interface ScheduleFilters {
+  educatorId?: string;
+  schoolId?: string;
+  academicYear?: string;
+  isActive?: boolean;
 }
 
 export const coreApi = {
-  // User management
+  // User management - Direct Firestore operations
   users: {
-    list: async (filters?: any) => {
-      let q = query(collection(db, 'users'), orderBy('lastName'), orderBy('firstName'));
-      
+    list: async (filters?: UserFilters): Promise<User[]> => {
+      const constraints = [];
+
       if (filters?.schoolId) {
-        q = query(q, where('schoolId', '==', filters.schoolId));
+        constraints.push(where('schoolId', '==', filters.schoolId));
       }
       if (filters?.divisionId) {
-        q = query(q, where('divisionIds', 'array-contains', filters.divisionId));
+        constraints.push(where('divisionId', '==', filters.divisionId));
       }
       if (filters?.departmentId) {
-        q = query(q, where('departmentIds', 'array-contains', filters.departmentId));
+        constraints.push(where('departmentIds', 'array-contains', filters.departmentId));
       }
       if (filters?.role) {
-        q = query(q, where('primaryRole', '==', filters.role));
+        constraints.push(where('primaryRole', '==', filters.role));
       }
       if (filters?.isActive !== undefined) {
-        q = query(q, where('isActive', '==', filters.isActive));
+        constraints.push(where('isActive', '==', filters.isActive));
       }
+
+      // Add ordering
+      constraints.push(orderBy('lastName'));
+      constraints.push(orderBy('firstName'));
+
       if (filters?.limit) {
-        q = query(q, firestoreLimit(filters.limit));
+        constraints.push(firestoreLimit(filters.limit));
       }
-      
+
+      const q = query(collection(db, getCollection('users')), ...constraints);
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+        lastLogin: toDate(doc.data().lastLogin),
+      })) as User[];
     },
 
-    getById: async (id: string) => {
-      const docRef = doc(db, 'users', id);
+    getById: async (id: string): Promise<User | null> => {
+      const docRef = doc(db, getCollection('users'), id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+          lastLogin: toDate(data.lastLogin),
+        } as User;
       }
-      throw new Error('User not found');
+      return null;
     },
 
-    create: async (userData: any) => {
-      const token = await getAuthToken();
-      const response = await fetch('/api/v1/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create user');
+    getByEmail: async (email: string): Promise<User | null> => {
+      const q = query(
+        collection(db, getCollection('users')),
+        where('email', '==', email.toLowerCase()),
+        firestoreLimit(1)
+      );
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+          lastLogin: toDate(data.lastLogin),
+        } as User;
       }
-      
-      return response.json();
+      return null;
     },
 
-    update: async (id: string, updates: any) => {
-      const token = await getAuthToken();
-      const response = await fetch(`/api/v1/users/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update user');
-      }
-      
-      return response.json();
+    create: async (userData: Partial<User>): Promise<User> => {
+      const now = Timestamp.now();
+      const newUser = {
+        ...userData,
+        email: userData.email?.toLowerCase(),
+        isActive: userData.isActive ?? true,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, getCollection('users')), newUser);
+      const created = await coreApi.users.getById(docRef.id);
+      if (!created) throw new Error('Failed to create user');
+      return created;
     },
 
-    delete: async (id: string) => {
-      const token = await getAuthToken();
-      const response = await fetch(`/api/v1/users/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
+    update: async (id: string, updates: Partial<User>): Promise<User> => {
+      const docRef = doc(db, getCollection('users'), id);
+      const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      };
+
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key as keyof typeof updateData] === undefined) {
+          delete updateData[key as keyof typeof updateData];
         }
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete user');
-      }
-      
-      return response.json();
+
+      await updateDoc(docRef, updateData);
+      const updated = await coreApi.users.getById(id);
+      if (!updated) throw new Error('User not found after update');
+      return updated;
     },
 
-    getTeachers: async (filters?: any) => {
-      let q = collection(db, 'users');
-      q = query(q, where('primaryRole', 'in', ['teacher', 'specialist_teacher', 'substitute_teacher']));
-      
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      const docRef = doc(db, getCollection('users'), id);
+      await deleteDoc(docRef);
+      return { success: true };
+    },
+
+    getTeachers: async (filters?: { schoolId?: string; divisionId?: string; isActive?: boolean }): Promise<User[]> => {
+      const constraints = [
+        where('primaryRole', 'in', ['educator', 'observer']),
+      ];
+
       if (filters?.schoolId) {
-        q = query(q, where('schoolId', '==', filters.schoolId));
+        constraints.push(where('schoolId', '==', filters.schoolId));
       }
       if (filters?.divisionId) {
-        q = query(q, where('divisionIds', 'array-contains', filters.divisionId));
+        constraints.push(where('divisionId', '==', filters.divisionId));
       }
       if (filters?.isActive !== undefined) {
-        q = query(q, where('isActive', '==', filters.isActive));
+        constraints.push(where('isActive', '==', filters.isActive));
       }
-      
-      q = query(q, orderBy('lastName'), orderBy('firstName'));
-      
+
+      constraints.push(orderBy('lastName'));
+      constraints.push(orderBy('firstName'));
+
+      const q = query(collection(db, getCollection('users')), ...constraints);
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+      })) as User[];
     },
 
-    updateRole: async (id: string, roleData: { role: string; secondaryRoles?: string[] }) => {
-      const token = await getAuthToken();
-      const response = await fetch(`/api/v1/users/${id}/role`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(roleData)
+    updateRole: async (id: string, roleData: { role: UserRole; secondaryRoles?: UserRole[] }): Promise<User> => {
+      return coreApi.users.update(id, {
+        primaryRole: roleData.role,
+        secondaryRoles: roleData.secondaryRoles || [],
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update user role');
-      }
-      
-      return response.json();
-    }
+    },
+
+    // Batch update multiple users
+    batchUpdate: async (updates: { id: string; data: Partial<User> }[]): Promise<void> => {
+      const batch = writeBatch(db);
+      const now = Timestamp.now();
+
+      updates.forEach(({ id, data }) => {
+        const docRef = doc(db, getCollection('users'), id);
+        batch.update(docRef, { ...data, updatedAt: now });
+      });
+
+      await batch.commit();
+    },
   },
 
   // Organization management
   organizations: {
-    list: async (filters?: any) => {
-      let q = query(collection(db, 'organizations'), orderBy('name'));
-      
+    list: async (filters?: { type?: string }): Promise<Organization[]> => {
+      const constraints = [orderBy('name')];
+
       if (filters?.type) {
-        q = query(q, where('type', '==', filters.type));
+        constraints.unshift(where('type', '==', filters.type));
       }
-      
+
+      const q = query(collection(db, getCollection('organizations')), ...constraints);
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+      })) as Organization[];
     },
 
-    getById: async (id: string) => {
-      const docRef = doc(db, 'organizations', id);
+    getById: async (id: string): Promise<Organization | null> => {
+      const docRef = doc(db, getCollection('organizations'), id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...doc.data() };
+        return {
+          id: docSnap.id,
+          ...docSnap.data(),
+          createdAt: toDate(docSnap.data().createdAt),
+          updatedAt: toDate(docSnap.data().updatedAt),
+        } as Organization;
       }
-      throw new Error('Organization not found');
+      return null;
     },
 
-    create: async (orgData: any) => {
+    create: async (orgData: Partial<Organization>): Promise<Organization> => {
+      const now = Timestamp.now();
       const newOrg = {
         ...orgData,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now,
       };
-      
-      const docRef = await addDoc(collection(db, 'organizations'), newOrg);
-      return await coreApi.organizations.getById(docRef.id);
+
+      const docRef = await addDoc(collection(db, getCollection('organizations')), newOrg);
+      const created = await coreApi.organizations.getById(docRef.id);
+      if (!created) throw new Error('Failed to create organization');
+      return created;
     },
 
-    update: async (id: string, updates: any) => {
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
-      
-      await updateDoc(doc(db, 'organizations', id), updateData);
-      return await coreApi.organizations.getById(id);
+    update: async (id: string, updates: Partial<Organization>): Promise<Organization> => {
+      const docRef = doc(db, getCollection('organizations'), id);
+      await updateDoc(docRef, { ...updates, updatedAt: Timestamp.now() });
+      const updated = await coreApi.organizations.getById(id);
+      if (!updated) throw new Error('Organization not found after update');
+      return updated;
     },
 
-    delete: async (id: string) => {
-      await deleteDoc(doc(db, 'organizations', id));
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      await deleteDoc(doc(db, getCollection('organizations'), id));
       return { success: true };
-    }
+    },
   },
 
   // School management
   schools: {
-    list: async (filters?: any) => {
-      let q = query(collection(db, 'schools'), orderBy('name'));
-      
+    list: async (filters?: { organizationId?: string; type?: string }): Promise<School[]> => {
+      const constraints = [orderBy('name')];
+
       if (filters?.organizationId) {
-        q = query(q, where('organizationId', '==', filters.organizationId));
+        constraints.unshift(where('organizationId', '==', filters.organizationId));
       }
       if (filters?.type) {
-        q = query(q, where('type', '==', filters.type));
+        constraints.unshift(where('type', '==', filters.type));
       }
-      
+
+      const q = query(collection(db, getCollection('schools')), ...constraints);
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+      })) as School[];
     },
 
-    getById: async (id: string) => {
-      const docRef = doc(db, 'schools', id);
+    getById: async (id: string): Promise<School | null> => {
+      const docRef = doc(db, getCollection('schools'), id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        return {
+          id: docSnap.id,
+          ...docSnap.data(),
+          createdAt: toDate(docSnap.data().createdAt),
+          updatedAt: toDate(docSnap.data().updatedAt),
+        } as School;
       }
-      throw new Error('School not found');
+      return null;
     },
 
-    create: async (schoolData: any) => {
+    create: async (schoolData: Partial<School>): Promise<School> => {
+      const now = Timestamp.now();
       const newSchool = {
         ...schoolData,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now,
       };
-      
-      const docRef = await addDoc(collection(db, 'schools'), newSchool);
-      return await coreApi.schools.getById(docRef.id);
+
+      const docRef = await addDoc(collection(db, getCollection('schools')), newSchool);
+      const created = await coreApi.schools.getById(docRef.id);
+      if (!created) throw new Error('Failed to create school');
+      return created;
     },
 
-    update: async (id: string, updates: any) => {
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
-      
-      await updateDoc(doc(db, 'schools', id), updateData);
-      return await coreApi.schools.getById(id);
+    update: async (id: string, updates: Partial<School>): Promise<School> => {
+      const docRef = doc(db, getCollection('schools'), id);
+      await updateDoc(docRef, { ...updates, updatedAt: Timestamp.now() });
+      const updated = await coreApi.schools.getById(id);
+      if (!updated) throw new Error('School not found after update');
+      return updated;
     },
 
-    delete: async (id: string) => {
-      await deleteDoc(doc(db, 'schools', id));
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      await deleteDoc(doc(db, getCollection('schools'), id));
       return { success: true };
-    }
+    },
   },
 
   // Division management
   divisions: {
-    list: async (filters?: any) => {
-      let q = query(collection(db, 'divisions'), orderBy('name'));
-      
+    list: async (filters?: { schoolId?: string; type?: string }): Promise<Division[]> => {
+      const constraints = [orderBy('name')];
+
       if (filters?.schoolId) {
-        q = query(q, where('schoolId', '==', filters.schoolId));
+        constraints.unshift(where('schoolId', '==', filters.schoolId));
       }
       if (filters?.type) {
-        q = query(q, where('type', '==', filters.type));
+        constraints.unshift(where('type', '==', filters.type));
       }
-      
+
+      const q = query(collection(db, getCollection('divisions')), ...constraints);
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+      })) as Division[];
     },
 
-    getById: async (id: string) => {
-      const docRef = doc(db, 'divisions', id);
+    getById: async (id: string): Promise<Division | null> => {
+      const docRef = doc(db, getCollection('divisions'), id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        return {
+          id: docSnap.id,
+          ...docSnap.data(),
+          createdAt: toDate(docSnap.data().createdAt),
+          updatedAt: toDate(docSnap.data().updatedAt),
+        } as Division;
       }
-      throw new Error('Division not found');
+      return null;
     },
 
-    create: async (divisionData: any) => {
+    create: async (divisionData: Partial<Division>): Promise<Division> => {
+      const now = Timestamp.now();
       const newDivision = {
         ...divisionData,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now,
       };
-      
-      const docRef = await addDoc(collection(db, 'divisions'), newDivision);
-      return await coreApi.divisions.getById(docRef.id);
+
+      const docRef = await addDoc(collection(db, getCollection('divisions')), newDivision);
+      const created = await coreApi.divisions.getById(docRef.id);
+      if (!created) throw new Error('Failed to create division');
+      return created;
     },
 
-    update: async (id: string, updates: any) => {
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
-      
-      await updateDoc(doc(db, 'divisions', id), updateData);
-      return await coreApi.divisions.getById(id);
+    update: async (id: string, updates: Partial<Division>): Promise<Division> => {
+      const docRef = doc(db, getCollection('divisions'), id);
+      await updateDoc(docRef, { ...updates, updatedAt: Timestamp.now() });
+      const updated = await coreApi.divisions.getById(id);
+      if (!updated) throw new Error('Division not found after update');
+      return updated;
     },
 
-    delete: async (id: string) => {
-      await deleteDoc(doc(db, 'divisions', id));
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      await deleteDoc(doc(db, getCollection('divisions'), id));
       return { success: true };
-    }
+    },
   },
 
   // Department management
   departments: {
-    list: async (filters?: any) => {
-      let q = query(collection(db, 'departments'), orderBy('name'));
-      
+    list: async (filters?: { schoolId?: string; divisionId?: string }): Promise<Department[]> => {
+      const constraints = [orderBy('name')];
+
       if (filters?.schoolId) {
-        q = query(q, where('schoolId', '==', filters.schoolId));
+        constraints.unshift(where('schoolId', '==', filters.schoolId));
       }
       if (filters?.divisionId) {
-        q = query(q, where('divisionIds', 'array-contains', filters.divisionId));
+        constraints.unshift(where('divisionId', '==', filters.divisionId));
       }
-      
+
+      const q = query(collection(db, getCollection('departments')), ...constraints);
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+      })) as Department[];
     },
 
-    getById: async (id: string) => {
-      const docRef = doc(db, 'departments', id);
+    getById: async (id: string): Promise<Department | null> => {
+      const docRef = doc(db, getCollection('departments'), id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        return {
+          id: docSnap.id,
+          ...docSnap.data(),
+          createdAt: toDate(docSnap.data().createdAt),
+          updatedAt: toDate(docSnap.data().updatedAt),
+        } as Department;
       }
-      throw new Error('Department not found');
+      return null;
     },
 
-    create: async (deptData: any) => {
+    create: async (deptData: Partial<Department>): Promise<Department> => {
+      const now = Timestamp.now();
       const newDept = {
         ...deptData,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now,
       };
-      
-      const docRef = await addDoc(collection(db, 'departments'), newDept);
-      return await coreApi.departments.getById(docRef.id);
+
+      const docRef = await addDoc(collection(db, getCollection('departments')), newDept);
+      const created = await coreApi.departments.getById(docRef.id);
+      if (!created) throw new Error('Failed to create department');
+      return created;
     },
 
-    update: async (id: string, updates: any) => {
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
-      
-      await updateDoc(doc(db, 'departments', id), updateData);
-      return await coreApi.departments.getById(id);
+    update: async (id: string, updates: Partial<Department>): Promise<Department> => {
+      const docRef = doc(db, getCollection('departments'), id);
+      await updateDoc(docRef, { ...updates, updatedAt: Timestamp.now() });
+      const updated = await coreApi.departments.getById(id);
+      if (!updated) throw new Error('Department not found after update');
+      return updated;
     },
 
-    delete: async (id: string) => {
-      await deleteDoc(doc(db, 'departments', id));
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      await deleteDoc(doc(db, getCollection('departments'), id));
       return { success: true };
-    }
+    },
   },
 
-  // SCHEDULE MANAGEMENT APIs (CRITICAL FOR AUTO-POPULATION)
+  // Schedule management - Direct Firestore operations (replacing non-existent API endpoints)
   schedules: {
-    getCurrentClass: async (educatorId: string, date?: Date) => {
-      const token = await getAuthToken();
+    // Get educator's schedule
+    getByEducatorId: async (educatorId: string, filters?: { academicYear?: string; isActive?: boolean }): Promise<EducatorSchedule | null> => {
+      const constraints = [where('educatorId', '==', educatorId)];
+
+      if (filters?.academicYear) {
+        constraints.push(where('academicYear', '==', filters.academicYear));
+      }
+      if (filters?.isActive !== undefined) {
+        constraints.push(where('isActive', '==', filters.isActive));
+      }
+
+      constraints.push(firestoreLimit(1));
+
+      const q = query(collection(db, getCollection('schedules')), ...constraints);
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        return {
+          id: doc.id,
+          ...doc.data(),
+          createdAt: toDate(doc.data().createdAt),
+          updatedAt: toDate(doc.data().updatedAt),
+        } as EducatorSchedule;
+      }
+      return null;
+    },
+
+    // Get current class for an educator based on time
+    getCurrentClass: async (educatorId: string, date?: Date): Promise<{ class: ClassAssignment | null; dayType: string | null }> => {
       const currentDate = date || new Date();
-      
-      const response = await fetch(`/api/v1/schedules/current-class`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          educatorId,
-          date: currentDate.toISOString()
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to get current class');
+      const schedule = await coreApi.schedules.getByEducatorId(educatorId, { isActive: true });
+
+      if (!schedule || !schedule.classAssignments) {
+        return { class: null, dayType: null };
       }
-      
-      return response.json();
+
+      const currentTime = currentDate.toTimeString().slice(0, 5); // "HH:MM"
+      const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+      // Find current class based on time
+      // This is a simplified version - a full implementation would need master schedule lookup
+      const currentClass = schedule.classAssignments.find(ca => {
+        if (!ca.isActive) return false;
+        // Check if this class is scheduled for today (simplified check)
+        return ca.dayTypes.some(dt =>
+          dt.toLowerCase() === dayOfWeek.toLowerCase() ||
+          dt === dayOfWeek.charAt(0)
+        );
+      });
+
+      return {
+        class: currentClass || null,
+        dayType: dayOfWeek,
+      };
     },
 
-    getDaySchedule: async (educatorId: string, date: Date) => {
-      const token = await getAuthToken();
-      
-      const response = await fetch(`/api/v1/schedules/day-schedule`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          educatorId,
-          date: date.toISOString()
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to get day schedule');
+    // Get day schedule for an educator
+    getDaySchedule: async (educatorId: string, date: Date): Promise<ClassAssignment[]> => {
+      const schedule = await coreApi.schedules.getByEducatorId(educatorId, { isActive: true });
+
+      if (!schedule || !schedule.classAssignments) {
+        return [];
       }
-      
-      return response.json();
+
+      const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+
+      // Filter classes for the given day
+      return schedule.classAssignments.filter(ca => {
+        if (!ca.isActive) return false;
+        return ca.dayTypes.some(dt =>
+          dt.toLowerCase() === dayOfWeek.toLowerCase() ||
+          dt === dayOfWeek.charAt(0)
+        );
+      });
     },
 
-    getWeekSchedule: async (educatorId: string, startDate: Date) => {
-      const token = await getAuthToken();
-      
-      const response = await fetch(`/api/v1/schedules/week-schedule`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          educatorId,
-          startDate: startDate.toISOString()
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to get week schedule');
-      }
-      
-      return response.json();
+    // Get available teachers for a given time
+    getAvailableTeachers: async (schoolId: string, date: Date, period?: string): Promise<User[]> => {
+      // Get all teachers in the school
+      const teachers = await coreApi.users.getTeachers({ schoolId, isActive: true });
+
+      // In a full implementation, you would filter out teachers who have classes during this period
+      // For now, return all teachers (this can be enhanced when schedule data is populated)
+      return teachers;
     },
 
-    getAvailableTeachers: async (schoolId: string, date: Date, period?: string) => {
-      const token = await getAuthToken();
-      
-      const response = await fetch(`/api/v1/schedules/available-teachers`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          schoolId,
-          date: date.toISOString(),
-          period
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to get available teachers');
+    // List all schedules with filters
+    list: async (filters?: ScheduleFilters): Promise<EducatorSchedule[]> => {
+      const constraints = [];
+
+      if (filters?.schoolId) {
+        constraints.push(where('schoolId', '==', filters.schoolId));
       }
-      
-      return response.json();
+      if (filters?.academicYear) {
+        constraints.push(where('academicYear', '==', filters.academicYear));
+      }
+      if (filters?.isActive !== undefined) {
+        constraints.push(where('isActive', '==', filters.isActive));
+      }
+
+      constraints.push(orderBy('educatorName'));
+
+      const q = query(collection(db, getCollection('schedules')), ...constraints);
+      const snapshot = await getDocs(q);
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: toDate(doc.data().createdAt),
+        updatedAt: toDate(doc.data().updatedAt),
+      })) as EducatorSchedule[];
     },
 
-    getCurrentDayType: async (schoolId: string, date: Date) => {
-      const token = await getAuthToken();
-      
-      const response = await fetch(`/api/v1/schedules/current-day-type`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          schoolId,
-          date: date.toISOString()
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to get current day type');
-      }
-      
-      return response.json();
+    // Create a new schedule
+    create: async (scheduleData: Partial<EducatorSchedule>): Promise<EducatorSchedule> => {
+      const now = Timestamp.now();
+      const newSchedule = {
+        ...scheduleData,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, getCollection('schedules')), newSchedule);
+
+      return {
+        id: docRef.id,
+        ...scheduleData,
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
+      } as EducatorSchedule;
     },
 
-    validateSchedule: async (scheduleData: any) => {
-      const token = await getAuthToken();
-      
-      const response = await fetch(`/api/v1/schedules/validate-schedule`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(scheduleData)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to validate schedule');
-      }
-      
-      return response.json();
+    // Update a schedule
+    update: async (id: string, updates: Partial<EducatorSchedule>): Promise<EducatorSchedule> => {
+      const docRef = doc(db, getCollection('schedules'), id);
+      const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      };
+
+      await updateDoc(docRef, updateData);
+
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) throw new Error('Schedule not found after update');
+
+      return {
+        id: docSnap.id,
+        ...docSnap.data(),
+        createdAt: toDate(docSnap.data().createdAt),
+        updatedAt: toDate(docSnap.data().updatedAt),
+      } as EducatorSchedule;
     },
 
-    checkConflicts: async (scheduleData: any) => {
-      const token = await getAuthToken();
-      
-      const response = await fetch(`/api/v1/schedules/check-conflicts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(scheduleData)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to check schedule conflicts');
-      }
-      
-      return response.json();
+    // Delete a schedule
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      await deleteDoc(doc(db, getCollection('schedules'), id));
+      return { success: true };
     },
-
-    // Schedule import functions
-    importSchedule: async (file: File) => {
-      const token = await getAuthToken();
-      const formData = new FormData();
-      formData.append('schedule_file', file);
-      
-      const response = await fetch('/api/v1/schedules/import', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to import schedule');
-      }
-      
-      return response.json();
-    },
-
-    getImportTemplate: async () => {
-      const response = await fetch('/api/v1/schedules/import-template');
-      
-      if (!response.ok) {
-        throw new Error('Failed to download import template');
-      }
-      
-      // Return blob for file download
-      const blob = await response.blob();
-      return blob;
-    }
-  }
+  },
 };

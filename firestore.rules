@@ -1,16 +1,386 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Simplified rules for development - any authenticated user can read/write
-    // TODO: Implement proper role-based security in production
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
+
+    // Get the current user's document from the users collection
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Get user data from staging collection (for staging environment)
+    function getStagingUserData() {
+      return get(/databases/$(database)/documents/staging_users/$(request.auth.uid)).data;
+    }
+
+    // Check if user has a specific role (checks both production and staging)
+    function hasRole(role) {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().primaryRole == role) ||
+        (exists(/databases/$(database)/documents/staging_users/$(request.auth.uid)) &&
+         getStagingUserData().primaryRole == role)
+      );
+    }
+
+    // Check if user has any of the specified roles
+    function hasAnyRole(roles) {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().primaryRole in roles) ||
+        (exists(/databases/$(database)/documents/staging_users/$(request.auth.uid)) &&
+         getStagingUserData().primaryRole in roles)
+      );
+    }
+
+    // Check if user is an admin (administrator or super_admin)
+    function isAdmin() {
+      return hasAnyRole(['administrator', 'super_admin']);
+    }
+
+    // Check if user is a super admin
+    function isSuperAdmin() {
+      return hasRole('super_admin');
+    }
+
+    // Check if user can observe (observer, manager, administrator, super_admin)
+    function canObserve() {
+      return hasAnyRole(['observer', 'manager', 'administrator', 'super_admin']);
+    }
+
+    // Check if user can manage others (manager, administrator, super_admin)
+    function canManage() {
+      return hasAnyRole(['manager', 'administrator', 'super_admin']);
+    }
+
+    // Check if this is the user's own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user belongs to the same school
+    function sameSchool(schoolId) {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().schoolId == schoolId) ||
+        (exists(/databases/$(database)/documents/staging_users/$(request.auth.uid)) &&
+         getStagingUserData().schoolId == schoolId)
+      );
+    }
+
+    // Validate required fields exist
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+
+    // Production users
+    match /users/{userId} {
+      // Users can read their own profile
+      // Admins can read all users
+      // Managers can read users in their school
+      allow read: if isOwner(userId) || isAdmin() ||
+                    (canManage() && sameSchool(resource.data.schoolId));
+
+      // Users can update their own non-role fields
+      // Only admins can create/update users (including role changes)
+      allow create: if isAdmin();
+      allow update: if isAdmin() ||
+                      (isOwner(userId) &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['primaryRole', 'secondaryRoles', 'permissions']));
+      allow delete: if isSuperAdmin();
+    }
+
+    // Staging users (same rules, separate collection)
+    match /staging_users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() ||
+                    (canManage() && sameSchool(resource.data.schoolId));
+      allow create: if isAdmin();
+      allow update: if isAdmin() ||
+                      (isOwner(userId) &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['primaryRole', 'secondaryRoles', 'permissions']));
+      allow delete: if isSuperAdmin();
+    }
+
+    // ============================================
+    // OBSERVATIONS COLLECTION
+    // ============================================
+
+    // Production observations
+    match /observations/{observationId} {
+      // Observers can read observations they created
+      // Subject (observed teacher) can read observations about them
+      // Managers/Admins can read all observations in their school
+      allow read: if isAuthenticated() && (
+        resource.data.observerId == request.auth.uid ||
+        resource.data.subjectId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+
+      // Only observers/managers/admins can create observations
+      allow create: if canObserve() &&
+                      hasRequiredFields(['observerId', 'subjectId', 'schoolId', 'frameworkId', 'status']) &&
+                      request.resource.data.observerId == request.auth.uid;
+
+      // Observer who created can update draft observations
+      // Admins can update any observation
+      allow update: if isAuthenticated() && (
+        (resource.data.observerId == request.auth.uid && resource.data.status == 'draft') ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+
+      // Only super admins can delete observations
+      allow delete: if isSuperAdmin();
+    }
+
+    // Staging observations
+    match /staging_observations/{observationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.observerId == request.auth.uid ||
+        resource.data.subjectId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      allow create: if canObserve() &&
+                      hasRequiredFields(['observerId', 'subjectId', 'schoolId', 'frameworkId', 'status']) &&
+                      request.resource.data.observerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (resource.data.observerId == request.auth.uid && resource.data.status == 'draft') ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // ============================================
+    // FRAMEWORKS COLLECTION
+    // ============================================
+
+    // Production frameworks
+    match /frameworks/{frameworkId} {
+      // All authenticated users can read active frameworks
+      allow read: if isAuthenticated() &&
+                    (resource.data.status == 'active' || isAdmin());
+
+      // Only admins can create/update/delete frameworks
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Staging frameworks
+    match /staging_frameworks/{frameworkId} {
+      allow read: if isAuthenticated() &&
+                    (resource.data.status == 'active' || isAdmin());
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ============================================
+    // ORGANIZATIONS & SCHOOLS
+    // ============================================
+
+    match /organizations/{orgId} {
+      // All authenticated users can read their organization
+      allow read: if isAuthenticated();
+      // Only super admins can modify organizations
+      allow write: if isSuperAdmin();
+    }
+
+    match /staging_organizations/{orgId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    match /schools/{schoolId} {
+      // All authenticated users can read schools
+      allow read: if isAuthenticated();
+      // Only admins can modify schools
+      allow write: if isAdmin();
+    }
+
+    match /staging_schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // DIVISIONS & DEPARTMENTS
+    // ============================================
+
+    match /divisions/{divisionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /staging_divisions/{divisionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() ||
+                    (canManage() && resource.data.headId == request.auth.uid);
+    }
+
+    match /staging_departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() ||
+                    (canManage() && resource.data.headId == request.auth.uid);
+    }
+
+    // ============================================
+    // SCHEDULES
+    // ============================================
+
+    match /schedules/{scheduleId} {
+      // Users can read their own schedule
+      // Managers can read schedules in their school
+      allow read: if isAuthenticated() && (
+        resource.data.educatorId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      // Only admins can modify schedules
+      allow write: if isAdmin();
+    }
+
+    match /staging_schedules/{scheduleId} {
+      allow read: if isAuthenticated() && (
+        resource.data.educatorId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      allow write: if isAdmin();
+    }
+
+    match /master_schedules/{scheduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /staging_master_schedules/{scheduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // PROFESSIONAL LEARNING & GOALS
+    // ============================================
+
+    match /professional_learning/{docId} {
+      // Users can read their own learning data
+      // Managers can read their team's data
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      // Users can create/update their own learning data
+      // Admins can modify any
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /staging_professional_learning/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /goals/{goalId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    match /staging_goals/{goalId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        (canManage() && sameSchool(resource.data.schoolId))
+      );
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // ============================================
+    // AUDIT LOG (Read-only for non-admins)
+    // ============================================
+
+    match /audit_log/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // System can log actions
+      allow update, delete: if false; // Audit logs are immutable
+    }
+
+    match /staging_audit_log/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // SETTINGS & CONFIGURATION
+    // ============================================
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    match /staging_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
     }
   }
 }
