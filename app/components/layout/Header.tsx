@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Bell, Menu, X } from 'lucide-react';
 import UserProfileDropdown from '../common/UserProfileDropdown';
 import { auth } from '../../lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -15,8 +15,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenu = false, onNavig
   const [userProfile, setUserProfile] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_notificationCount, _setNotificationCount] = useState(3);
   const notificationCount = 3;
 
   useEffect(() => {
@@ -47,17 +45,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenu = false, onNavig
 
     return () => unsubscribe();
   }, []);
-
-  // Note: signOut is handled by UserProfileDropdown via auth store
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      onNavigate?.('/');
-    } catch (error) {
-      console.error('Sign out failed:', error);
-    }
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

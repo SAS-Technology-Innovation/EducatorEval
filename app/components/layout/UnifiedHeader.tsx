@@ -168,22 +168,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     setLoading(isLoading);
   }, [user, isLoading]);
 
-  // Get signOut from auth store - signOut is handled by UserProfileDropdown directly
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { signOut: _signOut } = useAuthStore();
-
-  // Note: signOut is handled by UserProfileDropdown via auth store
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleSignOut = async () => {
-    try {
-      await _signOut();
-      handleNavigation('/');
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Sign out failed:', error);
-      }
-    }
-  };
+  // Note: signOut is handled by UserProfileDropdown via auth store directly
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,7 +199,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   
   // Check if user is admin (for applet management visibility)
   const isAdmin = () => {
-    return userProfile && ['super_admin', 'administrator'].includes(userProfile.primaryRole);
+    return userProfile && userProfile.primaryRole && ['super_admin', 'administrator'].includes(userProfile.primaryRole);
   };
 
   const isActive = (href: string) => {

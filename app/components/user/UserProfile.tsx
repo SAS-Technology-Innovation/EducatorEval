@@ -112,7 +112,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
         divisionIds: user.divisionId ? [user.divisionId] : [],
         departmentIds: user.departmentIds || [],
         bio: '',
-        preferences: user.preferences || {}
+        preferences: (user.preferences as unknown as Record<string, unknown>) || {}
       });
       loadDivisionsAndDepartments();
     }
@@ -209,7 +209,24 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const updatedUser = await coreApi.users.update(user.id, formData);
+      // Convert formData to user update format
+      const updateData: Record<string, unknown> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        pronouns: formData.pronouns,
+        languages: formData.languages,
+        subjects: formData.subjects,
+        grades: formData.grades,
+        divisionId: formData.divisionIds[0] || undefined,
+        departmentIds: formData.departmentIds
+      };
+      // Only include jobTitle if valid
+      if (formData.title) {
+        updateData.jobTitle = formData.title;
+      }
+      const updatedUser = await coreApi.users.update(user.id, updateData);
       onUpdate?.(updatedUser);
       setIsEditing(false);
     } catch (error) {
@@ -236,7 +253,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
       divisionIds: user.divisionId ? [user.divisionId] : [],
       departmentIds: user.departmentIds || [],
       bio: '',
-      preferences: user.preferences || {}
+      preferences: (user.preferences as unknown as Record<string, unknown>) || {}
     });
   };
 
@@ -349,7 +366,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
                   
                   <div className="flex items-center space-x-2 mt-1">
                     <Shield className="w-4 h-4 text-sas-gray-500" />
-                    <span className="text-sas-gray-600">{getRoleDisplayName(user.primaryRole)}</span>
+                    <span className="text-sas-gray-600">{getRoleDisplayName(user.primaryRole || 'staff')}</span>
                   </div>
                   
                   {user.jobTitle && (
@@ -373,10 +390,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
                 </div>
 
                 <div>
-                  {user.schoolName && (
+                  {user.schoolId && (
                     <div className="flex items-center space-x-2">
                       <Building2 className="w-4 h-4 text-sas-gray-500" />
-                      <span className="text-sas-gray-600">{user.schoolName}</span>
+                      <span className="text-sas-gray-600">{user.schoolId}</span>
                     </div>
                   )}
 
@@ -565,7 +582,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
 
                   <div className="flex items-center space-x-3">
                     <Shield className="w-5 h-5 text-sas-gray-400" />
-                    <span className="text-sas-gray-700">{getRoleDisplayName(user.primaryRole)}</span>
+                    <span className="text-sas-gray-700">{getRoleDisplayName(user.primaryRole || 'staff')}</span>
                   </div>
                 </div>
               )}

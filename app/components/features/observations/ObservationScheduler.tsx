@@ -94,7 +94,7 @@ export default function ObservationScheduler() {
       await createObservationMutation.mutateAsync({
         schoolId: user.schoolId,
         divisionId: user.divisionId,
-        departmentId: user.departmentId,
+        departmentId: user.departmentIds?.[0],
         subjectId: newObservation.teacherId,
         subjectName: teacher.displayName,
         observerId: user.id,
@@ -108,19 +108,29 @@ export default function ObservationScheduler() {
         totalQuestions: 10,
         evidencePercentage: 0,
         frameworkScores: [],
-        status: 'scheduled',
+        // CRP-specific fields
+        crpEvidenceCount: 0,
+        totalLookFors: 0,
+        crpPercentage: 0,
+        strengths: [],
+        growthAreas: [],
+        // Media and evidence
+        attachments: [],
+        // Follow-up
+        followUpRequired: false,
+        followUpCompleted: false,
+        status: 'draft', // Start as draft, will be marked as scheduled via metadata
         context: {
           type: 'classroom',
           className: newObservation.class || 'TBD',
           subject: teacher.subjects[0] || 'Unknown',
           grade: teacher.grades[0] || 'Unknown',
-          gradeLevel: teacher.grades,
           date: new Date(newObservation.date),
           startTime: new Date(newObservation.date),
           duration: newObservation.duration,
         },
         version: 1,
-        metadata: { priority: newObservation.priority }
+        metadata: { priority: newObservation.priority, scheduled: true }
       });
 
       alert('Observation scheduled successfully!');

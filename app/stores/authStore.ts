@@ -229,7 +229,8 @@ export const useAuthStore = create<AuthState>()(
                   employeeId: `EMP-${firebaseUser.uid.slice(-6).toUpperCase()}`,
                   schoolId: 'sas-main',
                   divisionId: 'general',
-                  departmentId: 'general',
+                  primaryDepartmentId: 'general',
+                  departmentIds: ['general'],
                   primaryRole: 'educator' as const,
                   secondaryRoles: [],
                   permissions: ['observations.view', 'profile.edit'],
@@ -246,13 +247,20 @@ export const useAuthStore = create<AuthState>()(
                   lastLogin: new Date(),
                   createdAt: new Date(),
                   updatedAt: new Date(),
-                  metadata: { 
+                  metadata: {
                     autoCreated: true,
                     source: 'firebase_auth'
                   }
                 };
                 
-                userData = await usersService.create(newUserData) as User;
+                const createdData = await usersService.create(newUserData as unknown as Record<string, unknown>);
+                userData = {
+                  ...newUserData,
+                  ...createdData,
+                  // Ensure dates are Date objects
+                  createdAt: createdData.createdAt ? new Date(createdData.createdAt as string) : new Date(),
+                  updatedAt: createdData.updatedAt ? new Date(createdData.updatedAt as string) : new Date()
+                } as User;
                 if (import.meta.env.DEV) console.log('✅ Auto-created user profile:', userData?.email);
 
               } catch (createError) {
