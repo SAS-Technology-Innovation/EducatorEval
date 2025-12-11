@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../stores/auth';
 import { useFrameworks } from '../../../hooks/useFrameworks';
 import { useCreateObservation } from '../../../hooks/useObservations';
-import { Plus, X, Calendar, Users, BookOpen, Clock } from 'lucide-react';
+import { Plus, X, Users, BookOpen, Clock } from 'lucide-react';
 import type { Observation } from '../../../types';
 
 /**

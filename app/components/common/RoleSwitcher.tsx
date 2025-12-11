@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../stores/auth';
 import type { UserRole } from '../../types';
 

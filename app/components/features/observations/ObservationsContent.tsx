@@ -1,16 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { observationsService } from '../../../lib/firestore';
-import { 
+import {
   Plus,
   Search,
-  Filter,
   Calendar,
   Users,
   TrendingUp,
   Eye,
   Edit,
   Trash2,
-  Download,
   CheckCircle2,
   Clock,
   AlertCircle
@@ -20,7 +18,8 @@ const ObservationsContent: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [observations, setObservations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_loading, setLoading] = useState(true);
 
   // Load observations from Firestore
   useEffect(() => {

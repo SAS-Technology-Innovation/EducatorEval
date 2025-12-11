@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAuthStore } from '../stores/auth';
 import ObservationsPage from '../components/features/observations/ObservationsPage';
 import TeacherObservationsView from '../components/features/observations/TeacherObservationsView';

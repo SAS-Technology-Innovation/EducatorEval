@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFramework } from '../../../hooks/useFrameworks';
 import DynamicQuestion from './DynamicQuestion';
 import type { Observation, ObservationResponse } from '../../../types/observation';
-import { Camera, Mic, MapPin, Save, Send, Clock, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, Send, Clock, BookOpen, AlertCircle } from 'lucide-react';
 
 interface DynamicObservationFormProps {
   frameworkId: string;
@@ -149,8 +149,8 @@ export default function DynamicObservationForm({
     if (!framework) return;
 
     // Validation
-    if (completionStats.requiredAnswered < completionStats.required) {
-      alert(`Please answer all required questions (${completionStats.requiredAnswered}/${completionStats.required} completed)`);
+    if ((completionStats.requiredAnswered ?? 0) < completionStats.required) {
+      alert(`Please answer all required questions (${completionStats.requiredAnswered ?? 0}/${completionStats.required} completed)`);
       return;
     }
 
@@ -236,13 +236,13 @@ export default function DynamicObservationForm({
               Progress: {completionStats.answered}/{completionStats.total} questions
             </span>
             <span className="text-sm text-gray-600">
-              Required: {completionStats.requiredAnswered}/{completionStats.required}
+              Required: {completionStats.requiredAnswered ?? 0}/{completionStats.required}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-all ${
-                completionStats.requiredAnswered >= completionStats.required
+                (completionStats.requiredAnswered ?? 0) >= completionStats.required
                   ? 'bg-green-500'
                   : 'bg-sas-blue-500'
               }`}
@@ -334,7 +334,7 @@ export default function DynamicObservationForm({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={completionStats.requiredAnswered < completionStats.required}
+            disabled={(completionStats.requiredAnswered ?? 0) < completionStats.required}
             className="px-6 py-2 bg-sas-blue-600 text-white rounded-lg font-medium hover:bg-sas-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             <Send className="w-4 h-4 mr-2" />
@@ -344,14 +344,14 @@ export default function DynamicObservationForm({
       </div>
 
       {/* Completion Warning */}
-      {completionStats.requiredAnswered < completionStats.required && (
+      {(completionStats.requiredAnswered ?? 0) < completionStats.required && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
           <div className="flex items-start">
             <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
             <div>
               <h4 className="text-sm font-medium text-yellow-900">Required questions remaining</h4>
               <p className="text-sm text-yellow-700 mt-1">
-                Please answer {completionStats.required - completionStats.requiredAnswered} more required question(s) before submitting.
+                Please answer {completionStats.required - (completionStats.requiredAnswered ?? 0)} more required question(s) before submitting.
               </p>
             </div>
           </div>

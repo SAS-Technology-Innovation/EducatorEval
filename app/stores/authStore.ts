@@ -268,7 +268,8 @@ export const useAuthStore = create<AuthState>()(
                   employeeId: `EMP-${firebaseUser.uid.slice(-6).toUpperCase()}`,
                   schoolId: 'sas-main',
                   divisionId: 'general',
-                  departmentId: 'general',
+                  primaryDepartmentId: 'general',
+                  departmentIds: ['general'],
                   primaryRole: 'educator',
                   secondaryRoles: [],
                   permissions: ['observations.view'],
@@ -285,7 +286,7 @@ export const useAuthStore = create<AuthState>()(
                   lastLogin: new Date(),
                   createdAt: new Date(),
                   updatedAt: new Date(),
-                  metadata: { 
+                  metadata: {
                     authOnly: true,
                     firestoreFailed: true
                   }
@@ -313,7 +314,8 @@ export const useAuthStore = create<AuthState>()(
               employeeId: `EMP-${firebaseUser.uid.slice(-6).toUpperCase()}`,
               schoolId: 'default-school',
               divisionId: 'general',
-              departmentId: 'general',
+              primaryDepartmentId: 'general',
+              departmentIds: ['general'],
               primaryRole: 'educator',
               secondaryRoles: [],
               permissions: ['view_own_profile'],

@@ -1,31 +1,22 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Calendar,
-  Clock,
-  User,
-  BookOpen,
-  MapPin,
-  Save,
-  Send,
   X,
   Search,
-  Filter,
   Plus,
-  Edit,
   Trash2,
-  AlertCircle,
-  CheckCircle,
   Loader2
 } from 'lucide-react';
 import { useTeachers, useObservationsBySchool, useCreateObservation, useDeleteObservation } from '../../../hooks/useFirestore';
 import { useAuthStore } from '../../../stores/auth';
-import type { User as Teacher, Observation } from '../../../types';
+import type { User as Teacher } from '../../../types';
 
 export default function ObservationScheduler() {
   const { user } = useAuthStore();
   const [selectedView, setSelectedView] = useState<'schedule' | 'create' | 'edit'>('schedule');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedTeacher, setSelectedTeacher] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_selectedTeacher, _setSelectedTeacher] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch data from Firestore

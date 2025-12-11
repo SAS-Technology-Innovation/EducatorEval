@@ -43,7 +43,8 @@ const createMockUser = (): User => ({
   employeeId: 'EMP-ADMIN001',
   schoolId: 'sas-001',
   divisionId: 'high-school',
-  departmentId: 'dept-leadership',
+  primaryDepartmentId: 'dept-leadership',
+  departmentIds: ['dept-leadership'],
   primaryRole: 'super_admin',
   secondaryRoles: ['administrator', 'educator', 'observer'],
   permissions: [
@@ -87,7 +88,7 @@ export const useAuthStore = create<AuthState>()(
     error: null,
 
     // Mock sign in - always succeeds
-    signIn: async (email: string, password: string) => {
+    signIn: async (email: string, _password: string) => {
       console.log('🔧 [MOCK AUTH] Sign in called with:', email);
       set({ isLoading: true, error: null });
       // Simulate network delay
@@ -100,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
     },
 
     // Mock sign up - always succeeds
-    signUp: async (email: string, password: string, displayName: string) => {
+    signUp: async (email: string, _password: string, displayName: string) => {
       console.log('🔧 [MOCK AUTH] Sign up called with:', email, displayName);
       set({ isLoading: true, error: null });
       await new Promise(resolve => setTimeout(resolve, 500));

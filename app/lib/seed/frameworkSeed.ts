@@ -1,6 +1,6 @@
 // Seed data for the Integrated Observation Framework
 // Based on "Integrated Observation Draft Plan.md"
-import type { Framework, FrameworkSection, Question, FrameworkAlignment } from '../../types';
+import type { Framework, FrameworkSection, Question } from '../../types';
 
 // The 10 Integrated Look-Fors
 export const integratedLookFors: Question[] = [

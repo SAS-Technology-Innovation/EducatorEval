@@ -7,8 +7,7 @@ import type {
   UserGoal,
   UserGoalMilestone,
   UserGoalMeasurement,
-  UserGoalReflection,
-  GoalActivity
+  UserGoalReflection
 } from '../types';
 import { useAuthStore } from '../stores/auth';
 

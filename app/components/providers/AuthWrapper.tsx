@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Shield, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
-import { getRoleDisplayName, getJobTitleDisplayName } from '../../utils/roleMapping';
 
 interface AuthWrapperProps {
   children: React.ReactNode;

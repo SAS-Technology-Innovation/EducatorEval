@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LogIn,
@@ -8,12 +8,8 @@ import {
   EyeOff,
   AlertCircle,
   Loader2,
-  BookOpen,
   User,
-  ArrowRight,
   CheckCircle,
-  UserPlus,
-  RotateCcw,
   Chrome
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
@@ -32,7 +28,8 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_showConfirmPassword, _setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
 

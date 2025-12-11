@@ -530,7 +530,8 @@ export const coreApi = {
         return { class: null, dayType: null };
       }
 
-      const currentTime = currentDate.toTimeString().slice(0, 5); // "HH:MM"
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _currentTime = currentDate.toTimeString().slice(0, 5); // "HH:MM"
       const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
 
       // Find current class based on time
@@ -571,7 +572,8 @@ export const coreApi = {
     },
 
     // Get available teachers for a given time
-    getAvailableTeachers: async (schoolId: string, date: Date, period?: string): Promise<User[]> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getAvailableTeachers: async (schoolId: string, _date: Date, _period?: string): Promise<User[]> => {
       // Get all teachers in the school
       const teachers = await coreApi.users.getTeachers({ schoolId, isActive: true });
 

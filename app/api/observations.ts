@@ -13,12 +13,11 @@ import {
   where,
   orderBy,
   limit as firestoreLimit,
-  Timestamp,
-  writeBatch
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { coreApi } from './core';
-import type { Observation, Framework, ObservationResponse, CRPStatistics } from '../types';
+import type { Observation, Framework, CRPStatistics } from '../types';
 
 // Get environment-based collection prefix
 const getCollectionPrefix = (): string => {

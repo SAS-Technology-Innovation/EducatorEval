@@ -1,18 +1,12 @@
-import React from 'react';
 import { Search, Bell } from 'lucide-react';
 import UserProfileDropdown from '../common/UserProfileDropdown';
 
 interface HeaderSimpleProps {
-  user?: any;
+  user?: unknown;
   onNavigate?: (path: string) => void;
 }
 
 const HeaderSimple: React.FC<HeaderSimpleProps> = ({ user, onNavigate }) => {
-  const handleSignOut = () => {
-    // Simple sign out
-    onNavigate?.('/');
-  };
-
   return (
     <header className="bg-white shadow-sm border-b border-sas-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,9 +49,6 @@ const HeaderSimple: React.FC<HeaderSimpleProps> = ({ user, onNavigate }) => {
             {/* User Menu */}
             {user ? (
               <UserProfileDropdown
-                user={user}
-                onSignOut={handleSignOut}
-                onNavigate={onNavigate}
                 notificationCount={3}
               />
             ) : (

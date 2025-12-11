@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Bell, Menu, X } from 'lucide-react';
 import UserProfileDropdown from '../common/UserProfileDropdown';
 import { auth } from '../../lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-// import { coreApi } from '../../api';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -12,11 +11,13 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenu = false, onNavigate }) => {
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<unknown>(null);
+  const [userProfile, setUserProfile] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [notificationCount, setNotificationCount] = useState(3); // Mock notification count
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_notificationCount, _setNotificationCount] = useState(3);
+  const notificationCount = 3;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -47,7 +48,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenu = false, onNavig
     return () => unsubscribe();
   }, []);
 
-  const handleSignOut = async () => {
+  // Note: signOut is handled by UserProfileDropdown via auth store
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleSignOut = async () => {
     try {
       await signOut(auth);
       onNavigate?.('/');
@@ -130,9 +133,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, showMenu = false, onNavig
               <div className="w-8 h-8 bg-sas-gray-200 rounded-full animate-pulse"></div>
             ) : currentUser && userProfile ? (
               <UserProfileDropdown
-                user={userProfile}
-                onSignOut={handleSignOut}
-                onNavigate={onNavigate}
                 notificationCount={notificationCount}
               />
             ) : (

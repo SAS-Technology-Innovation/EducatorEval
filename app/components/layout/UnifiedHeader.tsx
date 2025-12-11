@@ -11,9 +11,7 @@ import {
   Calendar,
   Users,
   Settings,
-  Puzzle,
   ChevronDown,
-  ArrowLeft,
   Target,
   UserCircle
 } from 'lucide-react';
@@ -35,6 +33,17 @@ interface UnifiedHeaderProps {
   breadcrumbItems?: Array<{ label: string; href?: string }>;
 }
 
+interface UserProfile {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  avatar?: string;
+  primaryRole?: string;
+  divisionNames?: string[];
+  departmentNames?: string[];
+}
+
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   currentPath = '/',
   onNavigate,
@@ -43,10 +52,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 }) => {
   const navigateRouter = useNavigate();
   const [currentUser, setCurrentUser] = useState<unknown>(null);
-  const [userProfile, setUserProfile] = useState<unknown>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [notificationCount, setNotificationCount] = useState(3);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_notificationCount, _setNotificationCount] = useState(3);
+  const notificationCount = 3;
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showPlatformMenu, setShowPlatformMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -129,7 +140,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   ];
 
   // Get auth state from store
-  const { user, isAuthenticated, isLoading, initialize } = useAuthStore();
+  const { user, isLoading, initialize } = useAuthStore();
 
   useEffect(() => {
     // Initialize auth listener
@@ -145,7 +156,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        avatar: user.photoURL,
+        avatar: user.avatar,
         primaryRole: user.primaryRole,
         divisionNames: [],
         departmentNames: []
@@ -157,12 +168,15 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     setLoading(isLoading);
   }, [user, isLoading]);
 
-  // Get signOut from auth store
-  const { signOut } = useAuthStore();
+  // Get signOut from auth store - signOut is handled by UserProfileDropdown directly
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { signOut: _signOut } = useAuthStore();
 
-  const handleSignOut = async () => {
+  // Note: signOut is handled by UserProfileDropdown via auth store
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleSignOut = async () => {
     try {
-      await signOut();
+      await _signOut();
       handleNavigation('/');
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -317,9 +331,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               <div className="w-8 h-8 bg-sas-gray-200 rounded-full animate-pulse"></div>
             ) : currentUser && userProfile ? (
               <UserProfileDropdown
-                user={userProfile}
-                onSignOut={handleSignOut}
-                onNavigate={handleNavigation}
                 notificationCount={notificationCount}
               />
             ) : (

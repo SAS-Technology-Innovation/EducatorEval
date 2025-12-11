@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Target,
   Plus,
@@ -34,7 +34,6 @@ import DataTable, { type Column } from '../common/DataTable';
 import type {
   GoalTemplate,
   GoalType,
-  GoalTemplateSection,
   GoalTemplateField,
   DefaultMilestone,
   SuggestedMeasurement,
@@ -84,8 +83,10 @@ export default function GoalTemplateManagement() {
 
   const [editingField, setEditingField] = useState<GoalTemplateField | null>(null);
   const [editingFieldIdx, setEditingFieldIdx] = useState<number | null>(null);
-  const [editingMilestone, setEditingMilestone] = useState<DefaultMilestone | null>(null);
-  const [editingMilestoneIdx, setEditingMilestoneIdx] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_editingMilestone, _setEditingMilestone] = useState<DefaultMilestone | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_editingMilestoneIdx, _setEditingMilestoneIdx] = useState<number | null>(null);
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -395,7 +396,6 @@ export default function GoalTemplateManagement() {
   const handleDeletePrompt = async (idx: number) => {
     if (!selectedTemplate) return;
 
-    const prompt = selectedTemplate.reflectionPrompts[idx];
     if (!confirm(`Delete prompt?`)) return;
 
     const updatedPrompts = selectedTemplate.reflectionPrompts.filter((_, i) => i !== idx);
@@ -1204,12 +1204,12 @@ function AddFieldModal({
   onSave: (field: Omit<GoalTemplateField, 'id'>) => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState('');
+  const [name] = useState('');
   const [label, setLabel] = useState('');
   const [type, setType] = useState<FieldType>('text');
   const [description, setDescription] = useState('');
   const [required, setRequired] = useState(false);
-  const [order, setOrder] = useState(1);
+  const [order] = useState(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1365,7 +1365,7 @@ function AddMilestoneModal({
   const [description, setDescription] = useState('');
   const [offsetDays, setOffsetDays] = useState(30);
   const [isRequired, setIsRequired] = useState(false);
-  const [order, setOrder] = useState(1);
+  const [order] = useState(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1524,7 +1524,7 @@ function AddPromptModal({
   const [description, setDescription] = useState('');
   const [frequency, setFrequency] = useState<'milestone' | 'weekly' | 'monthly' | 'custom'>('monthly');
   const [isRequired, setIsRequired] = useState(false);
-  const [order, setOrder] = useState(1);
+  const [order] = useState(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

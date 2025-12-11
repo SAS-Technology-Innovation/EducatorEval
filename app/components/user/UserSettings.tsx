@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Settings,
   Bell,
   Shield,
   Eye,
-  Globe,
   Palette,
-  Clock,
   Save,
   Monitor,
   Sun,
   Moon,
   Smartphone,
   Mail,
-  MessageSquare,
-  Calendar,
   AlertCircle
 } from 'lucide-react';
 import type { User } from '../../types';

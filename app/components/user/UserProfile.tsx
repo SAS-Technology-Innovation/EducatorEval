@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  User,
   Mail,
   Phone,
-  MapPin,
-  Calendar,
   Edit,
   Save,
   X,
-  Upload,
   Camera,
   GraduationCap,
   Building2,
   Users,
   Shield,
-  Globe,
   BookOpen
 } from 'lucide-react';
 import TagSelector from '../common/TagSelector';
@@ -62,8 +57,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<ProfileFormData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -79,8 +74,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
     preferences: {}
   });
 
-  const [divisions, setDivisions] = useState<Division[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_divisions, setDivisions] = useState<Division[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_departments, setDepartments] = useState<Department[]>([]);
   const [availableDivisionTags, setAvailableDivisionTags] = useState<Tag[]>([]);
   const [availableDepartmentTags, setAvailableDepartmentTags] = useState<Tag[]>([]);
   const [selectedDivisionTags, setSelectedDivisionTags] = useState<Tag[]>([]);
@@ -107,14 +104,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
         lastName: user.lastName || '',
         email: user.email || '',
         phoneNumber: user.phoneNumber || '',
-        title: user.title || '',
+        title: user.jobTitle || '',
         pronouns: user.pronouns || '',
         languages: user.languages || [],
         subjects: user.subjects || [],
         grades: user.grades || [],
-        divisionIds: user.divisionIds || [],
+        divisionIds: user.divisionId ? [user.divisionId] : [],
         departmentIds: user.departmentIds || [],
-        bio: user.bio || '',
+        bio: '',
         preferences: user.preferences || {}
       });
       loadDivisionsAndDepartments();
@@ -149,13 +146,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
 
       // Set selected tags based on user data
       if (user) {
-        const selectedDivs = divisionTags.filter(tag => 
-          user.divisionIds?.includes(tag.id)
+        const selectedDivs = divisionTags.filter(tag =>
+          user.divisionId === tag.id
         );
-        const selectedDepts = departmentTags.filter(tag => 
+        const selectedDepts = departmentTags.filter(tag =>
           user.departmentIds?.includes(tag.id)
         );
-        
+
         setSelectedDivisionTags(selectedDivs);
         setSelectedDepartmentTags(selectedDepts);
       }
@@ -231,14 +228,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
       lastName: user.lastName || '',
       email: user.email || '',
       phoneNumber: user.phoneNumber || '',
-      title: user.title || '',
+      title: user.jobTitle || '',
       pronouns: user.pronouns || '',
       languages: user.languages || [],
       subjects: user.subjects || [],
       grades: user.grades || [],
-      divisionIds: user.divisionIds || [],
+      divisionIds: user.divisionId ? [user.divisionId] : [],
       departmentIds: user.departmentIds || [],
-      bio: user.bio || '',
+      bio: '',
       preferences: user.preferences || {}
     });
   };
@@ -355,10 +352,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
                     <span className="text-sas-gray-600">{getRoleDisplayName(user.primaryRole)}</span>
                   </div>
                   
-                  {user.title && (
+                  {user.jobTitle && (
                     <div className="flex items-center space-x-2 mt-1">
                       <GraduationCap className="w-4 h-4 text-sas-gray-500" />
-                      <span className="text-sas-gray-600">{user.title}</span>
+                      <span className="text-sas-gray-600">{user.jobTitle}</span>
                     </div>
                   )}
 
@@ -498,10 +495,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdate }) => {
                       <span className="text-sas-gray-700">{user.phoneNumber}</span>
                     </div>
                   )}
-                  {user.title && (
+                  {user.jobTitle && (
                     <div className="flex items-center space-x-3">
                       <GraduationCap className="w-5 h-5 text-sas-gray-400" />
-                      <span className="text-sas-gray-700">{user.title}</span>
+                      <span className="text-sas-gray-700">{user.jobTitle}</span>
                     </div>
                   )}
                 </div>

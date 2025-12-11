@@ -1,7 +1,7 @@
 // Modal components for creating frameworks, sections, and questions
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Save, X, Trash2, CheckCircle } from 'lucide-react';
-import type { Framework, FrameworkSection, Question, FrameworkAlignment, RatingScale, RatingLabel } from '../../types';
+import type { Framework, FrameworkSection, Question, FrameworkAlignment, RatingScale } from '../../types';
 import type { User } from '../../types';
 
 // Create Framework Modal Component
