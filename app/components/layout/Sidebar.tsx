@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth';
+import type { UserRole } from '../../types';
 import {
   BarChart3,
   Book,
@@ -20,7 +21,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   href: string;
-  roles?: string[];
+  roles?: UserRole[];
   badge?: string;
 }
 

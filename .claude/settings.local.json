@@ -9,7 +9,10 @@
       "Bash(xargs basename:*)",
       "Bash(ls:*)",
       "Bash(echo:*)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(npm test:*)",
+      "Bash(sort:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,13 +1,13 @@
-import React from 'react';
 import AdminDashboard from './AdminDashboard';
 
 interface AdminContentProps {
   defaultTab?: 'overview' | 'users' | 'organizations' | 'system';
 }
 
-const AdminContent: React.FC<AdminContentProps> = ({ defaultTab = 'overview' }) => {
+const AdminContent: React.FC<AdminContentProps> = ({ defaultTab: _defaultTab = 'overview' }) => {
   // For now, we'll use the existing AdminDashboard but remove its header
   // TODO: Extract the content part of AdminDashboard without the header
+  // Note: defaultTab prop is accepted for API compatibility but AdminDashboard doesn't use it yet
   return (
     <div className="py-8">
       {/* Page Header */}
@@ -23,7 +23,7 @@ const AdminContent: React.FC<AdminContentProps> = ({ defaultTab = 'overview' }) 
       </div>
 
       {/* Temporary: Use existing AdminDashboard - this will need to be refactored */}
-      <AdminDashboard defaultTab={defaultTab} />
+      <AdminDashboard />
     </div>
   );
 };

@@ -3,11 +3,8 @@ import { Upload, Download, FileText, AlertCircle, CheckCircle } from 'lucide-rea
 import { coreApi } from '../../api';
 
 interface ImportResults {
-  total_processed: number;
-  valid_entries: number;
-  saved_entries: number;
-  updated_entries: number;
-  validation_errors: string[];
+  imported: number;
+  errors: string[];
 }
 
 const ScheduleImport: React.FC = () => {
@@ -146,39 +143,31 @@ const ScheduleImport: React.FC = () => {
               <CheckCircle className="w-5 h-5 text-sas-green-600" />
               <h3 className="font-medium text-sas-green-900">Import Completed</h3>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-sas-green-700">{results.total_processed}</div>
-                <div className="text-sm text-sas-green-600">Total Processed</div>
+                <div className="text-2xl font-bold text-sas-green-700">{results.imported}</div>
+                <div className="text-sm text-sas-green-600">Schedules Imported</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-sas-green-700">{results.valid_entries}</div>
-                <div className="text-sm text-sas-green-600">Valid Entries</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-sas-blue-700">{results.saved_entries}</div>
-                <div className="text-sm text-sas-blue-600">New Classes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-sas-purple-700">{results.updated_entries}</div>
-                <div className="text-sm text-sas-purple-600">Updated Classes</div>
+                <div className="text-2xl font-bold text-sas-red-700">{results.errors.length}</div>
+                <div className="text-sm text-sas-red-600">Errors</div>
               </div>
             </div>
           </div>
 
           {/* Validation Errors */}
-          {results.validation_errors && results.validation_errors.length > 0 && (
+          {results.errors && results.errors.length > 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600" />
-                <h3 className="font-medium text-yellow-900">Validation Warnings</h3>
+                <h3 className="font-medium text-yellow-900">Import Errors</h3>
               </div>
-              
+
               <div className="max-h-40 overflow-y-auto">
-                {results.validation_errors.map((error, index) => (
+                {results.errors.map((err, index) => (
                   <div key={index} className="text-sm text-yellow-700 py-1 border-b border-yellow-200 last:border-b-0">
-                    {error}
+                    {err}
                   </div>
                 ))}
               </div>

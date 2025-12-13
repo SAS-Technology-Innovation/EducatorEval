@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import DataTable, { Column } from '../common/DataTable';
 import { Plus, Edit, Trash2, Eye, Loader2, AlertCircle } from 'lucide-react';
 import type { User } from '../../types';
@@ -287,7 +287,7 @@ export default function UsersManagementConnected() {
 
       {/* User Form Modal */}
       <UserForm
-        user={editingUser}
+        user={editingUser ?? undefined}
         isOpen={showFormModal}
         onClose={handleFormClose}
         onSave={handleFormSave}

@@ -1,31 +1,22 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Calendar,
-  Clock,
-  User,
-  BookOpen,
-  MapPin,
-  Save,
-  Send,
   X,
   Search,
-  Filter,
   Plus,
-  Edit,
   Trash2,
-  AlertCircle,
-  CheckCircle,
   Loader2
 } from 'lucide-react';
 import { useTeachers, useObservationsBySchool, useCreateObservation, useDeleteObservation } from '../../../hooks/useFirestore';
 import { useAuthStore } from '../../../stores/auth';
-import type { User as Teacher, Observation } from '../../../types';
+import type { User as Teacher } from '../../../types';
 
 export default function ObservationScheduler() {
   const { user } = useAuthStore();
   const [selectedView, setSelectedView] = useState<'schedule' | 'create' | 'edit'>('schedule');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedTeacher, setSelectedTeacher] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_selectedTeacher, _setSelectedTeacher] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch data from Firestore
@@ -103,7 +94,7 @@ export default function ObservationScheduler() {
       await createObservationMutation.mutateAsync({
         schoolId: user.schoolId,
         divisionId: user.divisionId,
-        departmentId: user.departmentId,
+        departmentId: user.departmentIds?.[0],
         subjectId: newObservation.teacherId,
         subjectName: teacher.displayName,
         observerId: user.id,
@@ -117,19 +108,29 @@ export default function ObservationScheduler() {
         totalQuestions: 10,
         evidencePercentage: 0,
         frameworkScores: [],
-        status: 'scheduled',
+        // CRP-specific fields
+        crpEvidenceCount: 0,
+        totalLookFors: 0,
+        crpPercentage: 0,
+        strengths: [],
+        growthAreas: [],
+        // Media and evidence
+        attachments: [],
+        // Follow-up
+        followUpRequired: false,
+        followUpCompleted: false,
+        status: 'draft', // Start as draft, will be marked as scheduled via metadata
         context: {
           type: 'classroom',
           className: newObservation.class || 'TBD',
           subject: teacher.subjects[0] || 'Unknown',
           grade: teacher.grades[0] || 'Unknown',
-          gradeLevel: teacher.grades,
           date: new Date(newObservation.date),
           startTime: new Date(newObservation.date),
           duration: newObservation.duration,
         },
         version: 1,
-        metadata: { priority: newObservation.priority }
+        metadata: { priority: newObservation.priority, scheduled: true }
       });
 
       alert('Observation scheduled successfully!');

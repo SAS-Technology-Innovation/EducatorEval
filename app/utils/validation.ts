@@ -90,23 +90,23 @@ export const validateField = <T>(value: T, rules: ValidationRule<T>[]): string |
  * Common validation rules
  */
 export const ValidationRules = {
-  required: (message = 'This field is required'): ValidationRule => ({
+  required: (message = 'This field is required'): ValidationRule<string> => ({
     validator: (value: string) => isRequired(value),
     message
   }),
-  email: (message = 'Please enter a valid email address'): ValidationRule => ({
+  email: (message = 'Please enter a valid email address'): ValidationRule<string> => ({
     validator: (value: string) => isValidEmail(value),
     message
   }),
-  phone: (message = 'Please enter a valid phone number'): ValidationRule => ({
+  phone: (message = 'Please enter a valid phone number'): ValidationRule<string> => ({
     validator: (value: string) => isValidPhone(value),
     message
   }),
-  minLength: (min: number, message?: string): ValidationRule => ({
+  minLength: (min: number, message?: string): ValidationRule<string> => ({
     validator: (value: string) => minLength(value, min),
     message: message || `Must be at least ${min} characters long`
   }),
-  maxLength: (max: number, message?: string): ValidationRule => ({
+  maxLength: (max: number, message?: string): ValidationRule<string> => ({
     validator: (value: string) => maxLength(value, max),
     message: message || `Must be no more than ${max} characters long`
   })

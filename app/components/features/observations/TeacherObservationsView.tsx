@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuthStore } from '../../../stores/auth';
 import { useObservations, useUpdateObservation } from '../../../hooks/useObservations';
 import { useFrameworks } from '../../../hooks/useFrameworks';
+import type { Observation } from '../../../types';
 import {
   Search,
   Filter,
@@ -184,9 +185,9 @@ const TeacherObservationsView: React.FC = () => {
   }, [myObservations, frameworks]);
 
 
-  const handleAddComment = (observation: any) => {
+  const handleAddComment = (observation: Observation) => {
     setSelectedObservation(observation);
-    setTeacherComment(observation.teacherComment || '');
+    setTeacherComment((observation.metadata?.teacherComment as string) || '');
     setShowCommentModal(true);
   };
 
@@ -198,13 +199,13 @@ const TeacherObservationsView: React.FC = () => {
     setIsSubmittingComment(true);
 
     try {
-      // Update observation with teacher comment
+      // Update observation with teacher comment in metadata
       await updateObservation.mutateAsync({
         id: selectedObservation.id,
         data: {
-          teacherComment: teacherComment.trim(),
           metadata: {
             ...selectedObservation.metadata,
+            teacherComment: teacherComment.trim(),
             teacherCommentedAt: new Date().toISOString(),
             teacherCommentedBy: user?.id
           }
@@ -446,10 +447,10 @@ const TeacherObservationsView: React.FC = () => {
                                 </div>
                               </div>
 
-                              {observation.teacherComment && (
+                              {observation.metadata?.teacherComment && (
                                 <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                                   <p className="text-sm text-gray-700">
-                                    <span className="font-medium">Your Response:</span> {observation.teacherComment}
+                                    <span className="font-medium">Your Response:</span> {observation.metadata.teacherComment as string}
                                   </p>
                                 </div>
                               )}
@@ -468,7 +469,7 @@ const TeacherObservationsView: React.FC = () => {
                           <button
                             onClick={() => handleAddComment(observation)}
                             className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                            title={observation.teacherComment ? "Edit Response" : "Add Response"}
+                            title={observation.metadata?.teacherComment ? "Edit Response" : "Add Response"}
                           >
                             <MessageSquare className="w-4 h-4" />
                           </button>

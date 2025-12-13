@@ -40,8 +40,8 @@ export default function StaffDashboard() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-sas-navy-100 flex items-center justify-center">
-            {user.photoURL ? (
-              <img src={user.photoURL} alt={user.displayName} className="w-16 h-16 rounded-full object-cover" />
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.displayName} className="w-16 h-16 rounded-full object-cover" />
             ) : (
               <User className="w-8 h-8 text-sas-navy-600" />
             )}
@@ -56,16 +56,16 @@ export default function StaffDashboard() {
                   <span>{user.email}</span>
                 </div>
               )}
-              {user.department && (
+              {user.primaryDepartmentId && (
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  <span>{user.department}</span>
+                  <span>{user.primaryDepartmentId}</span>
                 </div>
               )}
-              {user.division && (
+              {user.divisionId && (
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  <span>{user.division}</span>
+                  <span>{user.divisionId}</span>
                 </div>
               )}
             </div>
@@ -109,16 +109,16 @@ export default function StaffDashboard() {
             <h4 className="text-sm font-medium text-gray-700 mb-2">Your Role</h4>
             <p className="text-gray-600 capitalize">{user.primaryRole?.replace('_', ' ') || 'Staff'}</p>
           </div>
-          {user.department && (
+          {user.primaryDepartmentId && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Department</h4>
-              <p className="text-gray-600">{user.department}</p>
+              <p className="text-gray-600">{user.primaryDepartmentId}</p>
             </div>
           )}
-          {user.division && (
+          {user.divisionId && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Division</h4>
-              <p className="text-gray-600">{user.division}</p>
+              <p className="text-gray-600">{user.divisionId}</p>
             </div>
           )}
           <div>

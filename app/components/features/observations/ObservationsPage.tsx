@@ -35,33 +35,31 @@ const ObservationsPage: React.FC = () => {
   // Filter observations based on search and filters
   const filteredObservations = useMemo(() => {
     if (!observations) return [];
-    
+
     return observations.filter(obs => {
-      const matchesSearch = !searchTerm || 
-        obs.teacherName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        obs.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        obs.gradeLevel?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+      const matchesSearch = !searchTerm ||
+        obs.subjectName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        obs.context?.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        obs.context?.grade?.toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesStatus = statusFilter === 'all' || obs.status === statusFilter;
-      
+
       const matchesFramework = selectedFramework === 'all' || obs.frameworkId === selectedFramework;
-      
+
       return matchesSearch && matchesStatus && matchesFramework;
     });
   }, [observations, searchTerm, statusFilter, selectedFramework]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    if (!observations) return { total: 0, completed: 0, inProgress: 0, scheduled: 0, crpEvidence: 0 };
-    
+    if (!observations) return { total: 0, completed: 0, draft: 0, submitted: 0, crpEvidence: 0 };
+
     return {
       total: observations.length,
       completed: observations.filter(obs => obs.status === 'completed').length,
-      inProgress: observations.filter(obs => obs.status === 'in_progress').length,
-      scheduled: observations.filter(obs => obs.status === 'scheduled').length,
-      crpEvidence: observations.filter(obs => 
-        obs.crpEvidence && Object.values(obs.crpEvidence).some(Boolean)
-      ).length,
+      draft: observations.filter(obs => obs.status === 'draft').length,
+      submitted: observations.filter(obs => obs.status === 'submitted').length,
+      crpEvidence: observations.filter(obs => obs.crpEvidenceCount > 0).length,
     };
   }, [observations]);
 
@@ -69,10 +67,11 @@ const ObservationsPage: React.FC = () => {
     switch (status) {
       case 'completed':
         return <CheckCircle2 className="w-4 h-4 text-green-600" />;
-      case 'in_progress':
+      case 'submitted':
         return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'scheduled':
+      case 'reviewed':
         return <Calendar className="w-4 h-4 text-sas-blue-600" />;
+      case 'draft':
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }
@@ -82,10 +81,11 @@ const ObservationsPage: React.FC = () => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800';
-      case 'in_progress':
+      case 'submitted':
         return 'bg-yellow-100 text-yellow-800';
-      case 'scheduled':
+      case 'reviewed':
         return 'bg-sas-blue-100 text-blue-800';
+      case 'draft':
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -163,7 +163,7 @@ const ObservationsPage: React.FC = () => {
               <p className="text-gray-600">Culturally Responsive Pedagogy in Action</p>
             </div>
             <div className="flex items-center space-x-3">
-              {hasPermission('observations', 'create') && (
+              {hasPermission('observations.create') && (
                 <button
                   onClick={() => setShowObservationForm(true)}
                   className="bg-sas-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-sas-blue-700 flex items-center"
@@ -218,9 +218,9 @@ const ObservationsPage: React.FC = () => {
                 <Clock className="w-4 h-4 text-yellow-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">In Progress</p>
+                <p className="text-sm font-medium text-gray-600">Submitted</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {observationsLoading ? '...' : stats.inProgress.toLocaleString()}
+                  {observationsLoading ? '...' : stats.submitted.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -340,7 +340,7 @@ const ObservationsPage: React.FC = () => {
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No observations yet</h3>
                   <p className="text-gray-600 mb-4">Get started by creating your first CRP observation.</p>
-                  {hasPermission('observations', 'create') && (
+                  {hasPermission('observations.create') && (
                     <button
                       onClick={() => setShowObservationForm(true)}
                       className="bg-sas-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-sas-blue-700"
@@ -370,50 +370,40 @@ const ObservationsPage: React.FC = () => {
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
                             <h3 className="text-lg font-medium text-gray-900">
-                              {observation.teacherName || 'Unknown Teacher'}
+                              {observation.subjectName || 'Unknown Teacher'}
                             </h3>
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(observation.status)}`}>
                               {getStatusIcon(observation.status)}
                               <span className="ml-1 capitalize">{observation.status.replace('_', ' ')}</span>
                             </span>
                           </div>
-                          
+
                           <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                             <div>
-                              <span className="font-medium">Subject:</span> {observation.subject}
+                              <span className="font-medium">Subject:</span> {observation.context?.subject || 'N/A'}
                             </div>
                             <div>
-                              <span className="font-medium">Grade:</span> {observation.gradeLevel}
+                              <span className="font-medium">Grade:</span> {observation.context?.grade || 'N/A'}
                             </div>
                             <div>
-                              <span className="font-medium">Duration:</span> {observation.duration} min
+                              <span className="font-medium">Duration:</span> {observation.context?.duration || 0} min
                             </div>
                             <div>
-                              <span className="font-medium">Scheduled:</span> {
-                                observation.scheduledDate 
-                                  ? new Date(observation.scheduledDate).toLocaleDateString()
+                              <span className="font-medium">Date:</span> {
+                                observation.context?.date
+                                  ? new Date(observation.context.date).toLocaleDateString()
                                   : 'Not scheduled'
                               }
                             </div>
                           </div>
 
                           {/* CRP Evidence Indicators */}
-                          {observation.crpEvidence && (
+                          {observation.crpEvidenceCount > 0 && (
                             <div className="mt-3">
                               <div className="flex items-center space-x-4">
-                                <span className="text-sm font-medium text-gray-700">CRP Evidence:</span>
-                                <div className="flex space-x-2">
-                                  {Object.entries(observation.crpEvidence).map(([domain, hasEvidence]) => (
-                                    hasEvidence && (
-                                      <span 
-                                        key={domain}
-                                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"
-                                      >
-                                        {domain.replace('_', ' ').toUpperCase()}
-                                      </span>
-                                    )
-                                  ))}
-                                </div>
+                                <span className="text-sm font-medium text-gray-700">
+                                  CRP Evidence: {observation.crpEvidenceCount}/{observation.totalLookFors} ({observation.crpPercentage?.toFixed(0) || 0}%)
+                                </span>
                               </div>
                             </div>
                           )}
@@ -425,12 +415,12 @@ const ObservationsPage: React.FC = () => {
                       <button className="p-2 text-gray-400 hover:text-sas-blue-600 hover:bg-sas-blue-50 rounded-lg">
                         <Eye className="w-4 h-4" />
                       </button>
-                      {hasPermission('observations', 'update') && (
+                      {hasPermission('observations.update') && (
                         <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg">
                           <Edit className="w-4 h-4" />
                         </button>
                       )}
-                      {hasPermission('observations', 'delete') && (
+                      {hasPermission('observations.delete') && (
                         <button
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                           onClick={() => handleDeleteObservation(observation.id)}

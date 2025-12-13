@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -7,19 +7,13 @@ import {
   Eye,
   Clock,
   Users,
-  BookOpen,
   BarChart3,
   Target,
   FileText,
   Settings,
   Search,
-  Filter,
-  Download,
   Play,
-  Pause,
   CheckCircle,
-  AlertCircle,
-  TrendingUp,
   Brain
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
@@ -28,7 +22,7 @@ import { useObservations } from '../../hooks/useObservations';
 export default function FrameworkDashboard() {
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
-  const { data: observations = [], isLoading, error } = useObservations(user?.schoolId);
+  const { data: observations = [], isLoading } = useObservations({ schoolId: user?.schoolId });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -44,7 +38,7 @@ export default function FrameworkDashboard() {
   const stats = {
     totalObservations: observations.length,
     thisWeek: observations.filter(obs => {
-      const date = new Date(obs.observationDate);
+      const date = new Date(obs.context?.date || obs.createdAt);
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       return date >= weekAgo;
@@ -52,7 +46,7 @@ export default function FrameworkDashboard() {
     crpEvidenceRate: 68.4, // TODO: Calculate from real data
     myObservations: observations.filter(obs => obs.observerId === user?.id).length,
     drafts: observations.filter(obs => obs.status === 'draft' && obs.observerId === user?.id).length,
-    scheduled: observations.filter(obs => obs.status === 'scheduled' && obs.observerId === user?.id).length,
+    submitted: observations.filter(obs => obs.status === 'submitted' && obs.observerId === user?.id).length,
     targetProgress: 24.9 // Progress toward 5,000 goal
   };
 
@@ -153,7 +147,7 @@ export default function FrameworkDashboard() {
   const filteredObservations = observations
     .filter(obs => {
       if (isTeacher) {
-        return obs.educatorId === user?.id; // Teachers see their own observations
+        return obs.subjectId === user?.id; // Teachers see their own observations
       }
       if (isObserver && !isAdmin) {
         return obs.observerId === user?.id; // Observers see their own observations
@@ -164,8 +158,8 @@ export default function FrameworkDashboard() {
       if (filterStatus !== 'all' && obs.status !== filterStatus) return false;
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        // TODO: Add teacher name search when we have user data
-        return obs.subjectArea?.toLowerCase().includes(searchLower);
+        return obs.subjectName?.toLowerCase().includes(searchLower) ||
+               obs.context?.subject?.toLowerCase().includes(searchLower);
       }
       return true;
     })
@@ -312,9 +306,9 @@ export default function FrameworkDashboard() {
                   <div key={obs.id} className="bg-white rounded-lg p-4 border border-yellow-200">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-medium text-gray-900">{obs.educatorId}</h3>
-                        <p className="text-sm text-gray-600">{obs.subjectArea} • {obs.gradeLevel}</p>
-                        <p className="text-sm text-gray-500">Period {obs.period}</p>
+                        <h3 className="font-medium text-gray-900">{obs.subjectName}</h3>
+                        <p className="text-sm text-gray-600">{obs.context?.subject} • {obs.context?.grade}</p>
+                        <p className="text-sm text-gray-500">Period {obs.context?.period}</p>
                       </div>
                       {getStatusBadge(obs.status)}
                     </div>
@@ -386,19 +380,19 @@ export default function FrameworkDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {obs.educatorId}
+                          {obs.subjectName}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {obs.gradeLevel} • Period {obs.period}
+                          {obs.context?.grade} • Period {obs.context?.period}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {obs.subjectArea}
+                      {obs.context?.subject}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{new Date(obs.observationDate).toLocaleDateString()}</div>
-                      <div className="text-sm text-gray-500">{obs.period}</div>
+                      <div className="text-sm text-gray-900">{new Date(obs.context?.date || obs.createdAt).toLocaleDateString()}</div>
+                      <div className="text-sm text-gray-500">{obs.context?.period}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(obs.status)}
@@ -407,15 +401,15 @@ export default function FrameworkDashboard() {
                       {obs.status === 'completed' ? (
                         <div>
                           <span className="text-sm font-medium text-green-600">
-                            8/10
+                            {obs.crpEvidenceCount}/{obs.totalLookFors}
                           </span>
                           <div className="text-xs text-gray-500">
-                            80% evidence
+                            {obs.crpPercentage?.toFixed(0) || 0}% evidence
                           </div>
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">
-                          {obs.status === 'scheduled' ? 'Pending' : 'In Progress'}
+                          {obs.status === 'submitted' ? 'Pending Review' : 'In Progress'}
                         </span>
                       )}
                     </td>

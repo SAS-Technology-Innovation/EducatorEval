@@ -1,4 +1,3 @@
-import React from 'react';
 import AuthWrapper from './AuthWrapper';
 import AdminDashboard from '../admin/AdminDashboard';
 
@@ -6,13 +5,14 @@ interface AuthAdminWrapperProps {
   defaultTab?: 'overview' | 'users' | 'organizations' | 'applets' | 'system';
 }
 
-const AuthAdminWrapper: React.FC<AuthAdminWrapperProps> = ({ defaultTab = 'overview' }) => {
+// Note: defaultTab prop accepted for API compatibility but AdminDashboard doesn't use it yet
+const AuthAdminWrapper: React.FC<AuthAdminWrapperProps> = ({ defaultTab: _defaultTab = 'overview' }) => {
   return (
-    <AuthWrapper 
+    <AuthWrapper
       requireAuth={true}
       requireRoles={['super_admin', 'administrator']}
     >
-      <AdminDashboard defaultTab={defaultTab} />
+      <AdminDashboard />
     </AuthWrapper>
   );
 };

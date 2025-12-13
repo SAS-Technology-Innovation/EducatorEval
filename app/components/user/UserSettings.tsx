@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Settings,
   Bell,
   Shield,
   Eye,
-  Globe,
   Palette,
-  Clock,
   Save,
   Monitor,
   Sun,
   Moon,
   Smartphone,
   Mail,
-  MessageSquare,
-  Calendar,
   AlertCircle
 } from 'lucide-react';
 import type { User } from '../../types';
@@ -116,9 +111,18 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
 
   useEffect(() => {
     if (user?.preferences) {
+      // Safely merge user preferences with default settings structure
+      const prefs = user.preferences as unknown as Partial<typeof settings>;
       setSettings(prevSettings => ({
         ...prevSettings,
-        ...user.preferences
+        theme: prefs.theme ?? prevSettings.theme,
+        language: prefs.language ?? prevSettings.language,
+        timezone: prefs.timezone ?? prevSettings.timezone,
+        dateFormat: prevSettings.dateFormat,
+        timeFormat: prevSettings.timeFormat,
+        notifications: prefs.notifications ?? prevSettings.notifications,
+        privacy: prevSettings.privacy,
+        dashboard: prefs.dashboard ?? prevSettings.dashboard
       }));
     }
   }, [user]);
@@ -131,28 +135,43 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdate }) => {
         [key]: value
       }));
     } else {
-      setSettings(prev => ({
-        ...prev,
-        [category]: {
-          ...(prev as Record<string, Record<string, unknown>>)[category],
-          [key]: value
+      setSettings(prev => {
+        const prevCategory = prev[category as keyof typeof prev];
+        if (typeof prevCategory === 'object' && prevCategory !== null) {
+          return {
+            ...prev,
+            [category]: {
+              ...prevCategory,
+              [key]: value
+            }
+          };
         }
-      }));
+        return prev;
+      });
     }
     setHasChanges(true);
   };
 
   const handleNestedSettingChange = (category: string, subcategory: string, key: string, value: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [subcategory]: {
-          ...prev[category][subcategory],
-          [key]: value
+    setSettings(prev => {
+      const categoryValue = prev[category as keyof typeof prev];
+      if (typeof categoryValue === 'object' && categoryValue !== null) {
+        const subcategoryValue = (categoryValue as Record<string, unknown>)[subcategory];
+        if (typeof subcategoryValue === 'object' && subcategoryValue !== null) {
+          return {
+            ...prev,
+            [category]: {
+              ...categoryValue,
+              [subcategory]: {
+                ...subcategoryValue,
+                [key]: value
+              }
+            }
+          };
         }
       }
-    }));
+      return prev;
+    });
     setHasChanges(true);
   };
 

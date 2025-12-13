@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   BookOpen,
   Plus,
@@ -11,13 +11,12 @@ import {
   Settings,
   CheckCircle,
   Loader2,
-  AlertCircle,
-  Copy
+  AlertCircle
 } from 'lucide-react';
 import { useFrameworks, useUpdateFramework, useCreateFramework, useDeleteFramework } from '../../hooks/useFrameworks';
 import { useAuthStore } from '../../stores/auth';
 import DataTable, { type Column } from '../common/DataTable';
-import type { Framework, FrameworkSection, Question, FrameworkAlignment, RatingScale, RatingLabel } from '../../types';
+import type { Framework, FrameworkSection, Question, FrameworkAlignment } from '../../types';
 import { CreateFrameworkModal, CreateSectionModal, CreateQuestionModal } from './FrameworkManagementModals';
 
 export default function FrameworkManagement() {

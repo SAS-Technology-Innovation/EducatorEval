@@ -3,7 +3,7 @@
 // This creates the foundation for all observation data
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { integratedObservationFramework } from './frameworkSeed';
 
 // Firebase config from .env

@@ -51,7 +51,7 @@ const UserForm: React.FC<UserFormProps> = ({
   onSave,
   loading = false
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UserFormData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -67,8 +67,10 @@ const UserForm: React.FC<UserFormProps> = ({
     departmentIds: []
   });
 
-  const [divisions, setDivisions] = useState<Division[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_divisions, setDivisions] = useState<Division[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_departments, setDepartments] = useState<Department[]>([]);
   const [availableDivisionTags, setAvailableDivisionTags] = useState<Tag[]>([]);
   const [availableDepartmentTags, setAvailableDepartmentTags] = useState<Tag[]>([]);
   const [selectedDivisionTags, setSelectedDivisionTags] = useState<Tag[]>([]);
@@ -125,12 +127,12 @@ const UserForm: React.FC<UserFormProps> = ({
           employeeId: user.employeeId || '',
           primaryRole: user.primaryRole || 'teacher',
           secondaryRoles: user.secondaryRoles || [],
-          title: user.title || '',
+          title: user.jobTitle || '',
           phoneNumber: user.phoneNumber || '',
           languages: user.languages || [],
           subjects: user.subjects || [],
           grades: user.grades || [],
-          divisionIds: user.divisionIds || [],
+          divisionIds: user.divisionId ? [user.divisionId] : [],
           departmentIds: user.departmentIds || []
         });
       } else {
@@ -182,13 +184,13 @@ const UserForm: React.FC<UserFormProps> = ({
 
       // Set selected tags based on user data
       if (user) {
-        const selectedDivs = divisionTags.filter(tag => 
-          user.divisionIds?.includes(tag.id)
+        const selectedDivs = divisionTags.filter(tag =>
+          user.divisionId === tag.id
         );
-        const selectedDepts = departmentTags.filter(tag => 
+        const selectedDepts = departmentTags.filter(tag =>
           user.departmentIds?.includes(tag.id)
         );
-        
+
         setSelectedDivisionTags(selectedDivs);
         setSelectedDepartmentTags(selectedDepts);
       }

@@ -124,7 +124,7 @@ export default function TeacherDashboard() {
               {recentObservations.map(obs => (
                 <ObservationHistoryItem
                   key={obs.id}
-                  date={obs.date ? new Date(obs.date).toLocaleDateString() : 'No date'}
+                  date={obs.context?.date ? new Date(obs.context.date).toLocaleDateString() : 'No date'}
                   observer={obs.observerName || 'Unknown Observer'}
                   score={calculateObservationScore(obs)}
                   framework={obs.frameworkName || 'CRP Framework'}
@@ -202,7 +202,7 @@ export default function TeacherDashboard() {
                   <div key={obs.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900">
-                        {obs.date ? new Date(obs.date).toLocaleDateString() : 'No date'}
+                        {obs.context?.date ? new Date(obs.context.date).toLocaleDateString() : 'No date'}
                       </div>
                       <div className="text-gray-500">{obs.observerName || 'Unknown'}</div>
                     </div>
@@ -283,12 +283,12 @@ function calculateTrend(observations: Array<{ responses?: Array<{ rating?: strin
 }
 
 // Helper function to determine goal status
-function getGoalStatus(goal: { progress: number; targetDate?: string }): 'on-track' | 'needs-attention' | 'completed' {
+function getGoalStatus(goal: { progress: number; targetDate?: Date | string }): 'on-track' | 'needs-attention' | 'completed' {
   if (goal.progress >= 100) return 'completed';
   if (!goal.targetDate) return 'on-track';
 
   const today = new Date();
-  const target = new Date(goal.targetDate);
+  const target = goal.targetDate instanceof Date ? goal.targetDate : new Date(goal.targetDate);
   const daysRemaining = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   const expectedProgress = Math.max(0, 100 - (daysRemaining / 30 * 10)); // Rough expected progress
 

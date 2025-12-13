@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Sidebar from './Sidebar';
 import { Bell, Search } from 'lucide-react';
 import RoleSwitcher from '../common/RoleSwitcher';
@@ -10,7 +10,8 @@ interface AppLayoutProps {
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_sidebarCollapsed, _setSidebarCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -18,7 +19,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
       <Sidebar currentPath={currentPath} />
 
       {/* Main Content Area */}
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={`transition-all duration-300 ${_sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {/* Top Bar */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="px-6 py-3 flex items-center justify-between">
